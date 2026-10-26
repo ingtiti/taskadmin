@@ -18,7 +18,7 @@
     {
       "binding": "DB",
       "database_name": "control-campanas",
-      "database_id": "REEMPLAZAR_CON_DATABASE_ID",
+      "database_id": "b0a805aa-2b60-4f0a-97e8-512359dc60f8",
       "migrations_dir": "migrations"
     }
   ],

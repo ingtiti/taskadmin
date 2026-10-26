@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Control de Campañas LinkedIn</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231F4E79'/%3E%3Ccircle cx='10' cy='16' r='4' fill='%23CF3F27'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%23E5B647'/%3E%3Ccircle cx='22' cy='16' r='4' fill='%234CC38A'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+/* Layout: barra superior fija con módulos + filtros; contenido en una columna de 1180px; semáforo como lenguaje visual común */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --surface-2:#EBEFF4; --line:#D7DEE7; --fg:#15202C; --muted:#5A6879;
+  --accent:#1F4E79; --accent-fg:#FFFFFF; --accent-soft:#E2EBF5;
+  --ok:#23824F; --ok-soft:#E1F2E8; --warn:#B27A00; --warn-soft:#FBF0D3; --risk:#CF3F27; --risk-soft:#FBE2DC;
+  --late:#8A1717; --late-soft:#F2D6D6; --done:#78838F; --done-soft:#E9EDF1;
+  --shadow:0 1px 2px rgba(21,32,44,.06),0 8px 24px rgba(21,32,44,.06);
+  --display:"Bricolage Grotesque","Figtree",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E141B; --surface:#151F29; --surface-2:#1B2733; --line:#2A3846; --fg:#E5EBF1; --muted:#93A1B1;
+  --accent:#86B6E6; --accent-fg:#0E141B; --accent-soft:#1C3247;
+  --ok:#4CC38A; --ok-soft:#153026; --warn:#E5B647; --warn-soft:#352B11; --risk:#F37A61; --risk-soft:#3B201A;
+  --late:#FF8F8F; --late-soft:#3E1A1D; --done:#8C98A6; --done-soft:#222C37; --shadow:0 1px 2px rgba(0,0,0,.3);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E141B; --surface:#151F29; --surface-2:#1B2733; --line:#2A3846; --fg:#E5EBF1; --muted:#93A1B1;
+  --accent:#86B6E6; --accent-fg:#0E141B; --accent-soft:#1C3247;
+  --ok:#4CC38A; --ok-soft:#153026; --warn:#E5B647; --warn-soft:#352B11; --risk:#F37A61; --risk-soft:#3B201A;
+  --late:#FF8F8F; --late-soft:#3E1A1D; --done:#8C98A6; --done-soft:#222C37; --shadow:0 1px 2px rgba(0,0,0,.3);
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14.5px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:20px;padding-block:12px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;line-height:1.1}
+.brand b{font-family:var(--display);font-size:19px;letter-spacing:-.01em}
+.brand span{font-size:12px;color:var(--muted)}
+nav.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+nav.tabs a{padding:7px 12px;border-radius:8px;text-decoration:none;color:var(--muted);font-weight:600;font-size:13.5px}
+nav.tabs a:hover{background:var(--surface-2);color:var(--fg)}
+nav.tabs a[aria-current="page"]{background:var(--accent);color:var(--accent-fg)}
+main{padding-block:22px 64px;display:flex;flex-direction:column;gap:20px}
+h1{font-family:var(--display);font-size:26px;margin:0;letter-spacing:-.015em;text-wrap:balance}
+h2{font-family:var(--display);font-size:17px;margin:0;letter-spacing:-.005em}
+.sub{color:var(--muted);margin:2px 0 0}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.filters label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+select,input[type=text],input[type=email],input[type=date],input[type=password],textarea{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-height:36px;max-width:100%}
+textarea{min-height:72px;resize:vertical;width:100%}
+select:focus-visible,input:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 13px;font-weight:600;cursor:pointer;min-height:36px;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--risk);border-color:var(--risk)}
+.btn.small{min-height:30px;padding:4px 10px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.panel>.ph{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.panel>.pb{padding:14px 16px}
+.banner{border-radius:10px;padding:10px 14px;background:var(--warn-soft);color:var(--fg);border:1px solid var(--line)}
+.mono{font-family:var(--mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+/* semáforo */
+.tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.tile{all:unset;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px;display:flex;flex-direction:column;gap:6px;border-top:4px solid var(--c);box-shadow:var(--shadow)}
+.tile:hover{background:var(--surface-2)}
+.tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tile .n{font-family:var(--display);font-size:34px;line-height:1;font-variant-numeric:tabular-nums;color:var(--c)}
+.tile .l{font-weight:600;font-size:13px}
+.tile .d{font-size:12px;color:var(--muted)}
+.s-late{--c:var(--late);--cs:var(--late-soft)} .s-risk{--c:var(--risk);--cs:var(--risk-soft)}
+.s-warn{--c:var(--warn);--cs:var(--warn-soft)} .s-ok{--c:var(--ok);--cs:var(--ok-soft)} .s-done{--c:var(--done);--cs:var(--done-soft)}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--cs);color:var(--c);font-weight:700;font-size:12px;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.rows{list-style:none;margin:0;padding:0}
+.rows li{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,2fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.rows li:first-child{border-top:0}
+.rows .who b{display:block;font-weight:600}
+.rows .who span{font-size:12px;color:var(--muted)}
+.seg{display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--surface-2)}
+.seg span{display:block;height:100%;background:var(--c)}
+.counts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.counts .pill{padding:1px 7px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:9px;height:9px;border-radius:50%;background:var(--c);display:inline-block}
+/* tareas */
+.group h3{display:flex;align-items:center;gap:8px;margin:0;padding:12px 16px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--c);background:var(--cs);border-bottom:1px solid var(--line)}
+.group h3 .ct{font-family:var(--mono);font-size:12px;opacity:.85}
+.tasks{list-style:none;margin:0;padding:0}
+.task{display:grid;grid-template-columns:6px minmax(0,1fr) 150px 140px auto;gap:14px;align-items:center;padding:12px 16px 12px 0;border-bottom:1px solid var(--line)}
+.task:last-child{border-bottom:0}
+.task .stripe{align-self:stretch;background:var(--c);border-radius:0 4px 4px 0}
+.t-title{font-weight:600}
+.task.s-done .t-title{text-decoration:line-through;color:var(--muted)}
+.t-desc{font-size:12.5px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
+.t-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;border-radius:6px;padding:2px 7px;background:var(--surface-2);color:var(--fg);white-space:nowrap}
+.chip.emp{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.chip.alta{background:var(--risk-soft);color:var(--risk);font-weight:600}
+.av{width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-fg);font-size:10px;font-weight:700;display:inline-grid;place-items:center}
+.t-date{display:flex;flex-direction:column;gap:1px}
+.t-date .rel{font-size:12px;color:var(--c);font-weight:600}
+.task.s-done .t-date .rel{color:var(--muted)}
+.t-act{display:flex;gap:6px;align-items:center}
+.empty{padding:28px 16px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--fg);font-size:15px;margin-bottom:4px}
+.empty .btn{margin-top:12px}
+/* tablas */
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.badge{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{padding:16px;display:flex;flex-direction:column;gap:10px}
+.card .kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:13px}
+.card .kv dt{color:var(--muted)} .card .kv dd{margin:0}
+.card .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+/* orden del día */
+.mail{max-width:680px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.mail .mh{margin:0;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:13px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px}
+.mail .mh dt{color:var(--muted)} .mail .mh dd{margin:0;overflow-wrap:anywhere}
+.mail .mb{padding:18px}
+.mail .mb h4{margin:18px 0 6px;font-size:13px;color:var(--c);text-transform:uppercase;letter-spacing:.05em}
+.mail .mb ul{margin:0;padding-left:18px}
+.mail .mb li{margin:4px 0}
+/* modal */
+#overlay{position:fixed;inset:0;background:rgba(10,16,24,.45);z-index:20;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:max(24px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 24px max(12px,env(safe-area-inset-left,0px))}
+.sheet{background:var(--surface);border-radius:14px;width:min(640px,100%);box-shadow:0 20px 60px rgba(0,0,0,.25);border:1px solid var(--line)}
+.sheet .sh{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--line)}
+.sheet form,.sheet .sb{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+.f{display:flex;flex-direction:column;gap:5px}
+.f>span{font-size:12.5px;font-weight:600;color:var(--muted)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px;max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px}
+.checks label{display:flex;gap:8px;align-items:flex-start;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:13.5px}
+.checks label:hover{background:var(--surface-2)}
+.checks small{display:block;color:var(--muted);font-size:11.5px}
+.inline{display:flex;gap:8px;align-items:center}
+.foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding-top:4px}
+.err{color:var(--risk);font-size:13px;font-weight:600}
+#toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:30;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+@media (max-width:900px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}.grid2{grid-template-columns:minmax(0,1fr)}
+  .task{grid-template-columns:6px minmax(0,1fr) auto;row-gap:8px}.task .t-date{grid-column:2}.task .t-estado-wrap{grid-column:3;grid-row:2}.task .t-act{grid-column:3;grid-row:1}}
+@media (max-width:560px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.rows li{grid-template-columns:minmax(0,1fr)}.counts{justify-content:flex-start}.f2{grid-template-columns:1fr}nav.tabs{margin-left:0}}
+@media (prefers-reduced-motion:no-preference){.btn,.tile,nav.tabs a{transition:background .15s}}
+.yo{font-size:12px;color:var(--muted);text-align:right;line-height:1.2}
+.yo b{display:block;color:var(--fg);font-size:12.5px}
+.mail iframe{display:block}
+@media (max-width:560px){header.top{position:static}.bar{gap:12px}}
+.btn-link{all:unset;cursor:pointer;color:var(--accent);font-weight:600;font-size:12px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap bar">
+    <div class="brand"><b>Control de Campañas LinkedIn</b><span>TiTi-Apps · generación y calificación de contactos</span></div>
+    <nav class="tabs" aria-label="Módulos">
+      <a href="#tablero" data-tab="tablero">Semáforo</a>
+      <a href="#actividades" data-tab="actividades">Actividades</a>
+      <a href="#personal" data-tab="personal">Personal</a>
+      <a href="#empresas" data-tab="empresas">Empresas</a>
+      <a href="#orden" data-tab="orden">Orden del día</a>
+      <a href="#correo" data-tab="correo" id="tab-correo" hidden>Correo</a>
+    </nav>
+    <div class="yo" id="yo"></div>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <div class="empty"><b>Cargando el tablero…</b>Conectando con los datos del equipo.</div>
+</main>
+
+<div id="overlay" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" id="sheet"></div></div>
+<div id="toast" hidden role="status"></div>
+
+<script type="module">
+import { PERFILES, ESTADOS, PRIORIDADES, SEM, SEM_ORDER, esc, hoyCDMX, addDays, habil, fmt, fmtLargo, sem as semH, rel as relH, byFecha } from './js/logica.js';
+
+const st = { empresas: [], personal: [], tareas: [], envio: null, yo: null, hoy: hoyCDMX(), status: 'loading', error: '' };
+const ui = { tab: 'tablero', fEmp: '', fPer: '', fEst: 'abiertas', fSem: '', ordenPer: '' };
+try { const s = JSON.parse(localStorage.getItem('ccl-ui') || '{}'); ui.fEmp = s.fEmp || ''; ui.fPer = s.fPer || ''; } catch (e) {}
+const saveUi = () => { try { localStorage.setItem('ccl-ui', JSON.stringify({ fEmp: ui.fEmp, fPer: ui.fPer })); } catch (e) {} };
+const TABS = ['tablero', 'actividades', 'personal', 'empresas', 'orden', 'correo'];
+if (TABS.includes(location.hash.slice(1))) ui.tab = location.hash.slice(1);
+
+const $ = (s) => document.querySelector(s);
+const sem = (t) => semH(t, st.hoy);
+const rel = (t) => relH(t, st.hoy);
+const ini = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+const esLider = () => !!st.yo?.esLider;
+const puedeEditar = () => !!st.yo?.registrado;
+const puedeEstado = (t) => esLider() || (st.yo?.personaId && (t.responsables || []).includes(st.yo.personaId));
+let empById = {}, perById = {};
+const index = () => { empById = Object.fromEntries(st.empresas.map((e) => [e.id, e])); perById = Object.fromEntries(st.personal.map((p) => [p.id, p])); };
+const personasOrden = () => [...st.personal].sort((a, b) => (b.lider ? 1 : 0) - (a.lider ? 1 : 0) || String(a.nombre).localeCompare(String(b.nombre)));
+const countSem = (ts) => { const c = { late: 0, risk: 0, warn: 0, ok: 0, done: 0 }; ts.forEach((t) => c[sem(t)]++); return c; };
+
+let toastT;
+function toast(m) { const el = $('#toast'); el.textContent = m; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (el.hidden = true), 2800); }
+
+/* ---------- API ---------- */
+async function api(method, path, body) {
+  let r;
+  try {
+    r = await fetch(path, { method, credentials: 'same-origin', headers: body ? { 'content-type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+  } catch (e) { throw new Error('Sin conexión. Revisa tu internet e intenta de nuevo.'); }
+  const tipo = r.headers.get('content-type') || '';
+  if (!tipo.includes('application/json')) throw Object.assign(new Error('Tu sesión expiró. Recarga la página para entrar de nuevo.'), { status: 401 });
+  const d = await r.json();
+  if (!r.ok) throw Object.assign(new Error(d.error || 'No se pudo completar la operación.'), { status: r.status });
+  return d;
+}
+async function cargar() {
+  try {
+    const d = await api('GET', '/api/estado');
+    Object.assign(st, d, { status: 'ready', error: '' });
+  } catch (e) {
+    if (st.status !== 'ready' || e.status === 401) { st.status = 'error'; st.error = e.message; }
+  }
+  render();
+}
+async function escribir(method, path, body, msg) {
+  const d = await api(method, path, body);
+  if (msg) toast(msg);
+  await cargar();
+  return d;
+}
+
+/* ---------- render ---------- */
+function render() {
+  index();
+  document.querySelectorAll('nav.tabs a').forEach((a) => (a.dataset.tab === ui.tab ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
+  $('#yo').innerHTML = st.yo ? `<b>${esc(st.yo.nombre || st.yo.email)}</b>${esc(st.yo.esLider ? 'Líder global' : st.yo.registrado ? 'Equipo' : 'Solo lectura')}` : '';
+  const m = $('#main');
+  if (st.status === 'error') { m.innerHTML = `<div class="panel"><div class="empty"><b>${esc(st.error)}</b><button class="btn primary" data-act="recargar">Recargar</button></div></div>`; return; }
+  if (st.status === 'loading') return;
+  const aviso = st.yo && !st.yo.registrado ? `<div class="banner">Tu correo ${esc(st.yo.email)} no está dado de alta en el personal, así que solo puedes consultar. Pide a un líder global que te registre.</div>` : '';
+  $('#tab-correo').hidden = !esLider();
+  if (ui.tab === 'correo' && !esLider()) ui.tab = 'tablero';
+  m.innerHTML = aviso + { tablero: vTablero, actividades: vActividades, personal: vPersonal, empresas: vEmpresas, orden: vOrden, correo: vCorreo }[ui.tab]();
+  if (ui.tab === 'orden') cargarVistaPrevia();
+  if (ui.tab === 'correo') cargarCuenta();
+}
+function filtrosInner() {
+  return `<label for="fEmp">Empresa<select id="fEmp" data-f="fEmp"><option value="">Todas las empresas</option>${st.empresas.map((e) => `<option value="${e.id}" ${ui.fEmp === e.id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('')}</select></label>
+    <label for="fPer">Responsable<select id="fPer" data-f="fPer"><option value="">Todo el equipo</option>${personasOrden().map((p) => `<option value="${p.id}" ${ui.fPer === p.id ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('')}</select></label>`;
+}
+const filtradas = () => st.tareas.filter((t) => (!ui.fEmp || t.empresaId === ui.fEmp) && (!ui.fPer || (t.responsables || []).includes(ui.fPer)));
+function segbar(c) {
+  const tot = SEM_ORDER.reduce((a, k) => a + c[k], 0) || 1;
+  return `<div class="seg" role="img" aria-label="${SEM_ORDER.map((k) => SEM[k].label + ': ' + c[k]).join(', ')}">${SEM_ORDER.filter((k) => c[k]).map((k) => `<span class="s-${k}" style="width:${(c[k] / tot) * 100}%"></span>`).join('')}</div>`;
+}
+const countsHtml = (c) => `<div class="counts">${SEM_ORDER.filter((k) => c[k] && k !== 'done').map((k) => `<span class="pill s-${k}" title="${SEM[k].label}">${c[k]}</span>`).join('') || '<span class="muted">Sin pendientes</span>'}</div>`;
+const legend = `<div class="legend">${SEM_ORDER.map((k) => `<span class="s-${k}"><i></i>${SEM[k].label}</span>`).join('')}</div>`;
+
+function vTablero() {
+  const ts = filtradas(), c = countSem(ts), abiertas = ts.length - c.done;
+  const tiles = SEM_ORDER.map((k) => `<button class="tile s-${k}" data-act="ver-sem" data-sem="${k}"><span class="n">${c[k]}</span><span class="l">${SEM[k].label}</span><span class="d">${SEM[k].desc}</span></button>`).join('');
+  const emps = st.empresas.filter((e) => !ui.fEmp || e.id === ui.fEmp);
+  const empRows = emps.map((e) => {
+    const te = ts.filter((t) => t.empresaId === e.id), ce = countSem(te), pct = te.length ? Math.round((ce.done / te.length) * 100) : 0;
+    return `<li><div class="who"><b>${esc(e.nombre)}</b><span>${te.length} actividades · ${pct}% completado</span></div>${segbar(ce)}${countsHtml(ce)}</li>`;
+  }).join('');
+  const pers = personasOrden().filter((p) => p.activo && (!ui.fPer || p.id === ui.fPer));
+  const perRows = pers.map((p) => {
+    const tp = ts.filter((t) => (t.responsables || []).includes(p.id)), cp = countSem(tp);
+    return `<li><div class="who"><b>${esc(p.nombre)}</b><span>${esc(p.perfil)}${p.lider ? ' · Líder global' : ''}</span></div>${segbar(cp)}${countsHtml(cp)}</li>`;
+  }).join('');
+  const urg = ts.filter((t) => ['late', 'risk'].includes(sem(t))).sort(byFecha).slice(0, 10);
+  return `<div class="head"><div><h1>Semáforo del proyecto</h1><p class="sub">${fmtLargo(st.hoy)} · ${abiertas} actividades abiertas en ${ui.fEmp ? '1 empresa' : st.empresas.length + ' empresas'}</p></div><div class="filters">${filtrosInner()}</div></div>
+  <div class="tiles">${tiles}</div>
+  ${st.tareas.length ? '' : `<div class="panel"><div class="empty"><b>Todavía no hay actividades</b>Registra las empresas con su fecha de arranque y carga el plan de trabajo de la propuesta, o crea actividades una por una.<br><button class="btn primary" data-go="empresas">Ir a Empresas</button></div></div>`}
+  <div class="grid2">
+    <section class="panel"><div class="ph"><h2>Por empresa</h2>${legend}</div><div class="pb">${emps.length ? `<ul class="rows">${empRows}</ul>` : '<div class="empty">Sin empresas registradas.</div>'}</div></section>
+    <section class="panel"><div class="ph"><h2>Carga por persona</h2><span class="muted">Actividades asignadas</span></div><div class="pb">${pers.length ? `<ul class="rows">${perRows}</ul>` : '<div class="empty">Sin personal registrado.</div>'}</div></section>
+  </div>
+  <section class="panel"><div class="ph"><h2>Requieren atención hoy</h2><span class="muted">Vencidas y por vencer en 1 día</span></div>
+  ${urg.length ? `<ul class="tasks">${urg.map(rowTarea).join('')}</ul>` : '<div class="empty"><b>Nada vencido ni por vencer mañana</b>El equipo va en tiempo.</div>'}</section>`;
+}
+
+function rowTarea(t) {
+  const s = sem(t), e = empById[t.empresaId], resp = (t.responsables || []).map((id) => perById[id]).filter(Boolean);
+  return `<li class="task s-${s}">
+    <span class="stripe" aria-hidden="true"></span>
+    <div><div class="t-title">${esc(t.titulo)}</div>${t.descripcion ? `<div class="t-desc">${esc(t.descripcion)}</div>` : ''}
+      <div class="t-meta"><span class="chip emp">${esc(e ? e.nombre : 'Sin empresa')}</span>${resp.map((p) => `<span class="chip"><span class="av">${esc(ini(p.nombre))}</span>${esc(p.nombre)}</span>`).join('')}${resp.length ? '' : '<span class="chip alta">Sin responsable</span>'}${t.prioridad === 'Alta' ? '<span class="chip alta">Prioridad alta</span>' : ''}</div></div>
+    <div class="t-date"><span class="mono">${fmt(t.fecha)}</span><span class="rel">${rel(t)}</span></div>
+    <div class="t-estado-wrap"><select aria-label="Estado de ${esc(t.titulo)}" data-estado="${t.id}" ${puedeEstado(t) ? '' : 'disabled'}>${ESTADOS.map((x) => `<option ${t.estado === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+    <div class="t-act">${puedeEditar() ? `<button class="btn small" data-act="edit-t" data-id="${t.id}">Editar</button>` : ''}</div>
+  </li>`;
+}
+
+function vActividades() {
+  let ts = filtradas();
+  if (ui.fEst === 'abiertas') ts = ts.filter((t) => t.estado !== 'Completada');
+  else if (ui.fEst === 'completadas') ts = ts.filter((t) => t.estado === 'Completada');
+  if (ui.fSem) ts = ts.filter((t) => sem(t) === ui.fSem);
+  const groups = SEM_ORDER.map((k) => [k, ts.filter((t) => sem(t) === k).sort(byFecha)]).filter((g) => g[1].length);
+  return `<div class="head"><div><h1>Actividades</h1><p class="sub">Cada actividad puede tener uno o varios responsables.</p></div>
+    <div class="filters">${filtrosInner()}
+      <label for="fEst">Estado<select id="fEst" data-f="fEst"><option value="abiertas" ${ui.fEst === 'abiertas' ? 'selected' : ''}>Abiertas</option><option value="todas" ${ui.fEst === 'todas' ? 'selected' : ''}>Todas</option><option value="completadas" ${ui.fEst === 'completadas' ? 'selected' : ''}>Completadas</option></select></label>
+      <label for="fSem">Semáforo<select id="fSem" data-f="fSem"><option value="">Todos</option>${SEM_ORDER.map((k) => `<option value="${k}" ${ui.fSem === k ? 'selected' : ''}>${SEM[k].label}</option>`).join('')}</select></label>
+      ${puedeEditar() ? '<button class="btn primary" data-act="new-t" style="align-self:flex-end">Nueva actividad</button>' : ''}
+    </div></div>
+  ${groups.length
+    ? groups.map(([k, list]) => `<section class="panel group s-${k}" style="overflow:hidden"><h3>${SEM[k].label}<span class="ct">${list.length}</span></h3><ul class="tasks">${list.map(rowTarea).join('')}</ul></section>`).join('')
+    : `<div class="panel"><div class="empty"><b>${st.tareas.length ? 'Ninguna actividad coincide con los filtros' : 'Todavía no hay actividades'}</b>${st.tareas.length ? 'Cambia la empresa, el responsable o el estado.' : 'Carga el plan de trabajo desde Empresas o crea la primera actividad.'}</div></div>`}`;
+}
+
+function vPersonal() {
+  const ps = personasOrden();
+  const rows = ps.map((p) => {
+    const tp = st.tareas.filter((t) => (t.responsables || []).includes(p.id)), c = countSem(tp);
+    return `<tr><td><b>${esc(p.nombre)}</b>${p.lider ? ' <span class="badge">Líder global</span>' : ''}${p.activo ? '' : ' <span class="chip">Inactivo</span>'}</td>
+    <td>${esc(p.perfil)}</td>
+    <td>${p.email ? `<span class="mono">${esc(p.email)}</span>` : '<span class="pill s-risk">Sin correo</span>'}</td>
+    <td>${p.empresas.map((id) => empById[id]).filter(Boolean).map((e) => `<span class="chip emp">${esc(e.nombre)}</span>`).join(' ') || '<span class="muted">Todas</span>'}</td>
+    <td>${countsHtml(c)}</td>
+    <td>${esLider() ? `<button class="btn small" data-act="edit-p" data-id="${p.id}">Editar</button>` : ''}</td></tr>`;
+  }).join('');
+  const perfiles = PERFILES.map((pf) => `<span class="chip">${pf}: <b>${ps.filter((p) => p.perfil === pf && p.activo).length}</b></span>`).join('');
+  return `<div class="head"><div><h1>Personal</h1><p class="sub">El correo de cada persona recibe la orden del día a las 8:00 y es con el que entra a la app.</p></div>${esLider() ? '<button class="btn primary" data-act="new-p">Dar de alta</button>' : ''}</div>
+  <div class="t-meta">${perfiles}</div>
+  <section class="panel">${ps.length ? `<div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>Perfil</th><th>Correo</th><th>Empresas</th><th>Pendientes</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty"><b>Sin personal registrado</b>Da de alta a los líderes globales y al equipo de cada campaña.</div>'}</section>`;
+}
+
+function vEmpresas() {
+  const cards = st.empresas.map((e) => {
+    const te = st.tareas.filter((t) => t.empresaId === e.id), c = countSem(te), equipo = st.personal.filter((p) => p.activo && p.empresas.includes(e.id));
+    return `<article class="panel card"><div class="head" style="align-items:flex-start"><h2>${esc(e.nombre)}</h2><span class="badge">${te.length} actividades</span></div>
+    <dl class="kv"><dt>Contacto</dt><dd>${esc(e.contacto || '—')}</dd><dt>Arranque</dt><dd>${e.inicio ? fmtLargo(e.inicio) : '<span class="err">Sin fecha</span>'}</dd><dt>Equipo</dt><dd>${equipo.map((p) => esc(p.nombre)).join(', ') || '<span class="muted">Sin asignar</span>'}</dd></dl>
+    ${te.length ? segbar(c) : ''}
+    ${e.notas ? `<p class="t-desc" style="margin:0">${esc(e.notas)}</p>` : ''}
+    ${esLider() ? `<div class="acts"><button class="btn small" data-act="edit-e" data-id="${e.id}">Editar</button><button class="btn small ${te.length ? '' : 'primary'}" data-act="plan" data-id="${e.id}">${te.length ? 'Volver a cargar plan' : 'Cargar plan de trabajo'}</button></div>` : ''}</article>`;
+  }).join('');
+  return `<div class="head"><div><h1>Empresas</h1><p class="sub">Campañas en ejecución en paralelo. El plan de trabajo crea las actividades de 6 meses a partir de la fecha de arranque.</p></div>${esLider() ? '<button class="btn primary" data-act="new-e">Nueva empresa</button>' : ''}</div>
+  ${st.empresas.length ? `<div class="cards">${cards}</div>` : '<div class="panel"><div class="empty"><b>Sin empresas registradas</b>Agrega cada cliente con su fecha de arranque.</div></div>'}`;
+}
+
+/* ---------- orden del día ---------- */
+function vOrden() {
+  const ps = personasOrden().filter((p) => p.activo);
+  if (!ui.ordenPer || !perById[ui.ordenPer]) ui.ordenPer = st.yo?.personaId || ui.fPer || (ps[0] && ps[0].id) || '';
+  const sinCorreo = ps.filter((x) => !x.email);
+  const env = st.envio;
+  return `<div class="head"><div><h1>Orden del día</h1><p class="sub">Así llega el correo de las 8:00 (lunes a viernes) a cada persona: sus actividades abiertas que ya iniciaron, ordenadas por semáforo.</p></div>
+    <div class="filters"><label for="ordenPer">Persona<select id="ordenPer" data-f="ordenPer">${ps.map((x) => `<option value="${x.id}" ${x.id === ui.ordenPer ? 'selected' : ''}>${esc(x.nombre)}</option>`).join('')}</select></label>
+    ${esLider() && perById[ui.ordenPer]?.email ? `<button class="btn" data-act="enviar-uno" style="align-self:flex-end">Enviar ahora a esta persona</button>` : ''}</div></div>
+  <div class="panel"><div class="pb">${st.correo && st.correo.configurada ? `Se envía desde <b class="mono">${esc(st.correo.email)}</b>.` : `<span class="err">La cuenta de correo de envío no está configurada; no saldrán correos.</span>${esLider() ? ' <button class="btn small" data-go="correo">Configurar correo</button>' : ''}`}<br>${env ? `Último envío: <b>${fmtLargo(env.fecha)}</b> a las ${esc(env.hora)} (${env.origen === 'cron' ? 'automático' : 'manual'}) · ${env.enviados} ${env.enviados === 1 ? 'correo enviado' : 'correos enviados'}${env.fallidos ? ` · <span class="err">${env.fallidos} ${env.fallidos === 1 ? 'fallido' : 'fallidos'}</span>` : ''}${env.nota ? ' · ' + esc(env.nota) : ''}` : 'Todavía no se ha enviado ninguna orden del día.'}
+  ${sinCorreo.length ? `<p class="err" style="margin:8px 0 0">Sin correo, no reciben la orden del día: ${sinCorreo.map((x) => esc(x.nombre)).join(', ')}</p>` : ''}</div></div>
+  <div class="mail"><dl class="mh" id="orden-cab"><dt>Para</dt><dd>—</dd><dt>Asunto</dt><dd>—</dd></dl><div id="orden-prev" class="mb muted">Cargando vista previa…</div></div>`;
+}
+let previaSeq = 0;
+async function cargarVistaPrevia() {
+  const id = ui.ordenPer; if (!id) { $('#orden-prev').textContent = 'Da de alta al personal para ver su orden del día.'; return; }
+  const seq = ++previaSeq;
+  try {
+    const c = await api('GET', '/api/orden/' + encodeURIComponent(id));
+    if (seq !== previaSeq || !$('#orden-prev')) return;
+    $('#orden-cab').innerHTML = `<dt>Para</dt><dd>${c.para ? esc(c.para) : '<span class="err">Sin correo registrado</span>'}</dd><dt>Asunto</dt><dd>${esc(c.asunto)}</dd>`;
+    const frame = document.createElement('iframe');
+    frame.title = 'Vista previa del correo'; frame.style.cssText = 'width:100%;border:0;min-height:320px;background:#F3F5F8;display:block';
+    frame.setAttribute('sandbox', 'allow-same-origin');
+    frame.srcdoc = c.html;
+    frame.addEventListener('load', () => { try { frame.style.height = frame.contentDocument.body.scrollHeight + 'px'; } catch (e) {} });
+    const prev = $('#orden-prev'); prev.className = ''; prev.replaceChildren(frame);
+  } catch (e) { if ($('#orden-prev')) $('#orden-prev').textContent = e.message; }
+}
+
+
+/* ---------- cuenta de correo ---------- */
+const PROVEEDORES = {
+  fatcow: { label: 'FatCow / Network Solutions', smtpHost: 'smtp.fatcow.com', smtpPuerto: 465, smtpSeguridad: 'ssl', imapHost: 'imap.fatcow.com', imapPuerto: 993, imapSeguridad: 'ssl', guardarCopia: true,
+    nota: 'Datos oficiales para cuentas que venían de FatCow: usuario = correo completo y la misma contraseña con la que entras al webmail. Si Network Solutions ya movió el buzón a su plataforma y la prueba falla, busca tus servidores en webmail5b.networksolutionsemail.com/settings/ y elige "Otro proveedor".' },
+  google: { label: 'Google Workspace o Gmail', smtpHost: 'smtp.gmail.com', smtpPuerto: 465, smtpSeguridad: 'ssl', imapHost: 'imap.gmail.com', imapPuerto: 993, imapSeguridad: 'ssl', guardarCopia: false,
+    nota: 'Activa la verificación en dos pasos de la cuenta y usa una contraseña de aplicación, no la contraseña normal. Gmail guarda solo la copia en Enviados, por eso viene desactivada.' },
+  microsoft: { label: 'Microsoft 365 u Outlook', smtpHost: 'smtp.office365.com', smtpPuerto: 587, smtpSeguridad: 'starttls', imapHost: 'outlook.office365.com', imapPuerto: 993, imapSeguridad: 'ssl', guardarCopia: false,
+    nota: 'Microsoft 365 ya no acepta usuario y contraseña en IMAP y bloquea el envío por SMTP por omisión. El administrador debe habilitar "SMTP autenticado" en este buzón; aun así la prueba de IMAP fallará.' },
+  zoho: { label: 'Zoho Mail (dominio propio)', smtpHost: 'smtppro.zoho.com', smtpPuerto: 465, smtpSeguridad: 'ssl', imapHost: 'imappro.zoho.com', imapPuerto: 993, imapSeguridad: 'ssl', guardarCopia: true,
+    nota: 'Activa el acceso IMAP en Zoho Mail (Configuración > Correo > IMAP). Con verificación en dos pasos, genera una contraseña específica de aplicación. Las cuentas personales de Zoho usan smtp.zoho.com e imap.zoho.com.' },
+  hostinger: { label: 'Hostinger', smtpHost: 'smtp.hostinger.com', smtpPuerto: 465, smtpSeguridad: 'ssl', imapHost: 'imap.hostinger.com', imapPuerto: 993, imapSeguridad: 'ssl', guardarCopia: true,
+    nota: 'Usa la contraseña del buzón creado en hPanel.' },
+  godaddy: { label: 'GoDaddy (Workspace Email)', smtpHost: 'smtpout.secureserver.net', smtpPuerto: 465, smtpSeguridad: 'ssl', imapHost: 'imap.secureserver.net', imapPuerto: 993, imapSeguridad: 'ssl', guardarCopia: true,
+    nota: 'Si tu correo de GoDaddy es Microsoft 365, elige Microsoft 365.' },
+  cpanel: { label: 'Hosting con cPanel', smtpHost: 'mail.titi-apps.com', smtpPuerto: 465, smtpSeguridad: 'ssl', imapHost: 'mail.titi-apps.com', imapPuerto: 993, imapSeguridad: 'ssl', guardarCopia: true,
+    nota: 'En cPanel, abre Cuentas de correo > Conectar dispositivos para confirmar el servidor (suele ser mail.tudominio.com).' },
+  personalizado: { label: 'Otro proveedor', nota: 'Copia los datos de "configuración manual de cliente de correo" (IMAP y SMTP) que da tu proveedor.' },
+};
+const SEGS = [['ssl', 'SSL/TLS'], ['starttls', 'STARTTLS'], ['ninguna', 'Sin cifrar (no recomendado)']];
+const cuentaUI = { datos: null, prueba: null, cargando: false, error: '' };
+async function cargarCuenta() {
+  if (cuentaUI.datos || cuentaUI.cargando) return;
+  cuentaUI.cargando = true;
+  try { cuentaUI.datos = await api('GET', '/api/correo'); cuentaUI.error = ''; } catch (e) { cuentaUI.error = e.message; }
+  cuentaUI.cargando = false;
+  if (ui.tab === 'correo') render();
+}
+const optSeg = (v) => SEGS.map(([k, l]) => `<option value="${k}" ${v === k ? 'selected' : ''}>${l}</option>`).join('');
+function vCorreo() {
+  if (cuentaUI.error) return `<div class="panel"><div class="empty"><b>${esc(cuentaUI.error)}</b></div></div>`;
+  const c = cuentaUI.datos;
+  if (!c) return `<div class="empty"><b>Cargando la cuenta de correo…</b></div>`;
+  const pv = PROVEEDORES[c.proveedor] || PROVEEDORES.personalizado;
+  const pr = cuentaUI.prueba;
+  const carpetas = pr && pr.imap && pr.imap.carpetas || [];
+  const ultima = c.prueba ? `<p style="margin:0">Última prueba: <span class="pill ${c.prueba.ok ? 's-ok' : 's-risk'}">${c.prueba.ok ? 'Correcta' : 'Con errores'}</span> <span class="muted">${esc(c.prueba.fecha)} UTC · ${esc(c.prueba.detalle)}</span></p>` : '<p class="muted" style="margin:0">Todavía no se ha probado la conexión.</p>';
+  const resultado = pr ? `<section class="panel"><div class="ph"><h2>Resultado de la prueba</h2></div><div class="pb" style="display:flex;flex-direction:column;gap:8px">
+      <p style="margin:0"><span class="pill ${pr.smtp.ok ? 's-ok' : 's-risk'}">SMTP ${pr.smtp.ok ? 'correcto' : 'falló'}</span> ${esc(pr.smtp.detalle)}</p>
+      <p style="margin:0"><span class="pill ${pr.imap.ok ? 's-ok' : 's-risk'}">IMAP ${pr.imap.ok ? 'correcto' : 'falló'}</span> ${esc(pr.imap.detalle)}</p>
+      ${pr.imap.enviados ? `<p class="muted" style="margin:0">Carpeta de enviados detectada: <b>${esc(pr.imap.enviados)}</b></p>` : ''}</div></section>` : '';
+  return `<div class="head"><div><h1>Cuenta de correo</h1><p class="sub">La orden del día sale de esta cuenta, configurada como en cualquier programa de correo: SMTP para enviar e IMAP para comprobar el acceso y guardar copia en Enviados.</p></div></div>
+  <div class="panel"><div class="pb">${ultima}</div></div>
+  ${resultado}
+  <form class="panel" id="frm-correo" autocomplete="off"><div class="pb" style="display:flex;flex-direction:column;gap:14px">
+    <div class="f2"><label class="f"><span>Proveedor</span><select id="c-proveedor">${Object.entries(PROVEEDORES).map(([k, v]) => `<option value="${k}" ${c.proveedor === k ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
+      <label class="f"><span>Nombre del remitente</span><input type="text" id="c-nombre" maxlength="120" value="${esc(c.nombre)}"></label></div>
+    <p class="muted" id="c-nota" style="margin:0;font-size:13px">${esc(pv.nota)}</p>
+    <div class="f2"><label class="f"><span>Correo</span><input type="email" id="c-email" required maxlength="160" value="${esc(c.email)}"></label>
+      <label class="f"><span>Usuario (normalmente el mismo correo)</span><input type="text" id="c-usuario" maxlength="160" value="${esc(c.usuario)}" autocomplete="username"></label></div>
+    <label class="f"><span>Contraseña</span><span class="inline"><input type="password" id="c-password" maxlength="500" style="flex:1" autocomplete="new-password" placeholder="${c.tienePassword ? 'Guardada. Escribe solo si quieres cambiarla' : 'Contraseña del buzón o de aplicación'}"><button class="btn small" type="button" data-act="ver-pass">Mostrar</button></span></label>
+    <h2 style="margin-top:6px">Servidor de salida (SMTP)</h2>
+    <div class="f2"><label class="f"><span>Servidor</span><input type="text" id="c-smtpHost" required maxlength="200" value="${esc(c.smtpHost)}" placeholder="smtp.ejemplo.com"></label>
+      <div class="f2"><label class="f"><span>Puerto</span><input type="text" inputmode="numeric" id="c-smtpPuerto" required value="${esc(c.smtpPuerto)}"></label>
+      <label class="f"><span>Seguridad</span><select id="c-smtpSeguridad">${optSeg(c.smtpSeguridad)}</select></label></div></div>
+    <h2 style="margin-top:6px">Servidor de entrada (IMAP)</h2>
+    <div class="f2"><label class="f"><span>Servidor</span><input type="text" id="c-imapHost" maxlength="200" value="${esc(c.imapHost)}" placeholder="imap.ejemplo.com"></label>
+      <div class="f2"><label class="f"><span>Puerto</span><input type="text" inputmode="numeric" id="c-imapPuerto" value="${esc(c.imapPuerto)}"></label>
+      <label class="f"><span>Seguridad</span><select id="c-imapSeguridad">${optSeg(c.imapSeguridad)}</select></label></div></div>
+    <div class="f2"><label class="inline" style="align-self:end"><input type="checkbox" id="c-guardarCopia" ${c.guardarCopia ? 'checked' : ''}> Guardar copia de cada correo en Enviados</label>
+      <label class="f"><span>Carpeta de enviados (vacío = detectar)</span><input type="text" id="c-carpeta" list="c-carpetas" maxlength="200" value="${esc(c.carpetaEnviados)}"><datalist id="c-carpetas">${carpetas.map((x) => `<option value="${esc(x.valor)}">${esc(x.nombre)}</option>`).join('')}</datalist></label></div>
+    <p class="err" id="frm-err" hidden></p>
+    <div class="foot"><span class="muted" style="font-size:12.5px">${c.actualizadaPor ? `Última edición: ${esc(c.actualizadaPor)} · ${esc(c.actualizada)} UTC` : ''}</span>
+      <span class="inline"><button class="btn" type="submit" value="guardar">Guardar</button><button class="btn primary" type="submit" value="probar">Guardar y probar conexión</button></span></div>
+  </div></form>`;
+}
+function aplicarProveedor(k) {
+  const p = PROVEEDORES[k] || PROVEEDORES.personalizado;
+  $('#c-nota').textContent = p.nota;
+  if (k === 'personalizado') return;
+  $('#c-smtpHost').value = p.smtpHost; $('#c-smtpPuerto').value = p.smtpPuerto; $('#c-smtpSeguridad').value = p.smtpSeguridad;
+  $('#c-imapHost').value = p.imapHost; $('#c-imapPuerto').value = p.imapPuerto; $('#c-imapSeguridad').value = p.imapSeguridad;
+  $('#c-guardarCopia').checked = p.guardarCopia;
+}
+async function guardarCorreo(probar) {
+  const f = $('#frm-correo'), botones = f.querySelectorAll('button[type=submit]');
+  const v = (id) => $('#' + id).value.trim();
+  const data = { proveedor: v('c-proveedor'), nombre: v('c-nombre'), email: v('c-email'), usuario: v('c-usuario'), password: $('#c-password').value,
+    smtpHost: v('c-smtpHost'), smtpPuerto: v('c-smtpPuerto'), smtpSeguridad: v('c-smtpSeguridad'),
+    imapHost: v('c-imapHost'), imapPuerto: v('c-imapPuerto') || 993, imapSeguridad: v('c-imapSeguridad'),
+    guardarCopia: $('#c-guardarCopia').checked, carpetaEnviados: v('c-carpeta') };
+  if (!data.email || !data.smtpHost || !data.smtpPuerto) return showErr('Completa el correo y el servidor SMTP con su puerto.');
+  if (!cuentaUI.datos.tienePassword && !data.password) return showErr('Escribe la contraseña de la cuenta.');
+  botones.forEach((b) => (b.disabled = true));
+  try {
+    cuentaUI.datos = await api('PUT', '/api/correo', data);
+    if (probar) {
+      const btn = f.querySelector('button[value=probar]'); btn.textContent = 'Probando…';
+      cuentaUI.prueba = await api('POST', '/api/correo/probar');
+      cuentaUI.datos = await api('GET', '/api/correo');
+      toast(cuentaUI.prueba.smtp.ok && (cuentaUI.prueba.imap.ok || !data.imapHost) ? 'Conexión correcta' : 'La prueba encontró errores');
+    } else toast('Cuenta guardada');
+    const d = await api('GET', '/api/estado'); Object.assign(st, d);
+    render();
+  } catch (e) { botones.forEach((b) => (b.disabled = false)); f.querySelector('button[value=probar]').textContent = 'Guardar y probar conexión'; showErr(e.message); }
+}
+
+/* ---------- formularios ---------- */
+function openSheet(html) { $('#sheet').innerHTML = html; $('#overlay').hidden = false; const f = $('#sheet input,#sheet select,#sheet textarea'); if (f) f.focus(); }
+function closeSheet() { $('#overlay').hidden = true; $('#sheet').innerHTML = ''; }
+const shHead = (t) => `<div class="sh"><h2 id="sheet-title">${t}</h2><button class="btn small" data-act="close" type="button">Cerrar</button></div>`;
+const showErr = (m) => { const el = $('#frm-err'); if (el) { el.hidden = false; el.textContent = m; } else toast(m); };
+
+function formTarea(id) {
+  const t = id ? st.tareas.find((x) => x.id === id) : { estado: 'Pendiente', prioridad: 'Media', empresaId: ui.fEmp, responsables: ui.fPer ? [ui.fPer] : st.yo?.personaId ? [st.yo.personaId] : [] };
+  if (!t) return;
+  const ps = personasOrden().filter((p) => p.activo || (t.responsables || []).includes(p.id));
+  openSheet(shHead(id ? 'Editar actividad' : 'Nueva actividad') + `<form id="frm" data-kind="t" data-id="${id || ''}">
+    <label class="f"><span>Actividad</span><input type="text" id="t-titulo" required maxlength="200" value="${esc(t.titulo)}" placeholder="Ej. Calendario editorial del mes 2"></label>
+    <div class="f2"><label class="f"><span>Empresa</span><select id="t-emp" required><option value="">Elige una empresa</option>${st.empresas.map((e) => `<option value="${e.id}" ${t.empresaId === e.id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('')}</select></label>
+    <label class="f"><span>Prioridad</span><select id="t-prio">${PRIORIDADES.map((x) => `<option ${t.prioridad === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label></div>
+    <div class="f2"><label class="f"><span>Fecha de inicio (opcional)</span><input type="date" id="t-inicio" value="${esc(t.inicio || '')}"></label>
+    <label class="f"><span>Fecha compromiso</span><input type="date" id="t-fecha" required value="${esc(t.fecha || '')}"></label></div>
+    <div class="f"><span>Responsables (uno o varios)</span><div class="checks">${ps.map((p) => `<label><input type="checkbox" name="resp" value="${p.id}" ${(t.responsables || []).includes(p.id) ? 'checked' : ''}><span>${esc(p.nombre)}<small>${esc(p.perfil)}</small></span></label>`).join('') || '<span class="muted">Da de alta al personal primero.</span>'}</div></div>
+    <label class="f"><span>Estado</span><select id="t-estado">${ESTADOS.map((x) => `<option ${t.estado === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+    <label class="f"><span>Descripción o notas</span><textarea id="t-desc" maxlength="4000">${esc(t.descripcion || '')}</textarea></label>
+    <p class="err" id="frm-err" hidden></p>
+    <div class="foot">${id && esLider() ? `<button class="btn danger" type="button" data-act="del" data-col="tareas" data-id="${id}">Eliminar</button>` : '<span></span>'}<button class="btn primary" type="submit">${id ? 'Guardar cambios' : 'Crear actividad'}</button></div></form>`);
+}
+function formPersona(id) {
+  const p = id ? perById[id] : { perfil: 'Community manager', activo: true, empresas: [] };
+  openSheet(shHead(id ? 'Editar persona' : 'Dar de alta personal') + `<form id="frm" data-kind="p" data-id="${id || ''}">
+    <div class="f2"><label class="f"><span>Nombre</span><input type="text" id="p-nombre" required maxlength="120" value="${esc(p.nombre)}"></label>
+    <label class="f"><span>Correo electrónico</span><input type="email" id="p-email" maxlength="160" value="${esc(p.email || '')}" placeholder="nombre@titi-apps.com"></label></div>
+    <div class="f2"><label class="f"><span>Perfil</span><select id="p-perfil">${PERFILES.map((x) => `<option ${p.perfil === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+    <div class="f"><span>Opciones</span><label class="inline"><input type="checkbox" id="p-lider" ${p.lider ? 'checked' : ''}> Líder global</label><label class="inline"><input type="checkbox" id="p-activo" ${p.activo ? 'checked' : ''}> Activo</label></div></div>
+    <div class="f"><span>Empresas asignadas (vacío = todas)</span><div class="checks">${st.empresas.map((e) => `<label><input type="checkbox" name="emp" value="${e.id}" ${p.empresas.includes(e.id) ? 'checked' : ''}><span>${esc(e.nombre)}</span></label>`).join('') || '<span class="muted">Sin empresas registradas.</span>'}</div></div>
+    <p class="muted" style="margin:0;font-size:12.5px">Para que pueda entrar, su correo también debe estar en la política de Cloudflare Access.</p>
+    <p class="err" id="frm-err" hidden></p>
+    <div class="foot">${id ? `<button class="btn danger" type="button" data-act="del" data-col="personal" data-id="${id}">Eliminar</button>` : '<span></span>'}<button class="btn primary" type="submit">${id ? 'Guardar cambios' : 'Dar de alta'}</button></div></form>`);
+}
+function formEmpresa(id) {
+  const e = id ? empById[id] : {};
+  openSheet(shHead(id ? 'Editar empresa' : 'Nueva empresa') + `<form id="frm" data-kind="e" data-id="${id || ''}">
+    <label class="f"><span>Empresa</span><input type="text" id="e-nombre" required maxlength="120" value="${esc(e.nombre)}"></label>
+    <div class="f2"><label class="f"><span>Contacto del cliente</span><input type="text" id="e-contacto" maxlength="120" value="${esc(e.contacto || '')}"></label>
+    <label class="f"><span>Fecha de arranque (kickoff)</span><input type="date" id="e-inicio" value="${esc(e.inicio || '')}"></label></div>
+    <label class="f"><span>Notas</span><textarea id="e-notas" maxlength="2000">${esc(e.notas || '')}</textarea></label>
+    <p class="err" id="frm-err" hidden></p>
+    <div class="foot">${id ? `<button class="btn danger" type="button" data-act="del" data-col="empresas" data-id="${id}">Eliminar</button>` : '<span></span>'}<button class="btn primary" type="submit">${id ? 'Guardar cambios' : 'Crear empresa'}</button></div></form>`);
+}
+const N_PLAN = 44;
+function formPlan(id) {
+  const e = empById[id]; if (!e) return;
+  const ex = st.tareas.filter((t) => t.empresaId === id).length;
+  const perfiles = ['Project manager', 'Community manager', 'Diseñador gráfico', 'Telemarketer', 'Analista de datos'];
+  const sinPerfil = perfiles.filter((pf) => !st.personal.some((p) => p.activo && p.perfil === pf && (!p.empresas.length || p.empresas.includes(id))));
+  openSheet(shHead('Cargar plan de trabajo · ' + esc(e.nombre)) + `<div class="sb">
+    ${e.inicio ? `<p style="margin:0">Se crearán <b>${N_PLAN} actividades</b> para ${esc(e.nombre)} entre el ${fmtLargo(e.inicio)} y el ${fmtLargo(habil(addDays(e.inicio, 182)))}: kickoff, perfil de LinkedIn, aprobador, contenido del mes 1 en 2 semanas y el ciclo mensual de contenido, captura, calificación y reporte durante 6 meses.</p>
+    <p class="muted" style="margin:0">Los responsables se asignan por perfil entre el personal de esta empresa. Las fechas que caen en fin de semana se mueven al viernes.</p>
+    ${sinPerfil.length ? `<p class="err" style="margin:0">Sin personal con perfil ${sinPerfil.join(', ')}: esas actividades quedarán asignadas a los líderes globales.</p>` : ''}
+    ${ex ? `<p class="err" style="margin:0">Esta empresa ya tiene ${ex} actividades. Las nuevas se agregan sin borrar las existentes.</p>` : ''}
+    <p class="err" id="frm-err" hidden></p>
+    <div class="foot"><span></span><button class="btn primary" data-act="plan-go" data-id="${id}">Crear ${N_PLAN} actividades</button></div>`
+    : `<p style="margin:0">Primero registra la <b>fecha de arranque</b> de ${esc(e.nombre)}; las fechas del plan se calculan a partir de ella.</p><div class="foot"><span></span><button class="btn primary" data-act="edit-e" data-id="${id}">Editar empresa</button></div>`}</div>`);
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener('click', async (ev) => {
+  const go = ev.target.closest('[data-go]');
+  if (go) { ui.tab = go.dataset.go; history.replaceState(null, '', '#' + ui.tab); render(); return; }
+  const tab = ev.target.closest('nav.tabs a');
+  if (tab) { ev.preventDefault(); ui.tab = tab.dataset.tab; history.replaceState(null, '', '#' + ui.tab); render(); window.scrollTo(0, 0); return; }
+  if (ev.target.id === 'overlay') { closeSheet(); return; }
+  const b = ev.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act, id = b.dataset.id;
+  try {
+    if (a === 'close') closeSheet();
+    else if (a === 'recargar') location.reload();
+    else if (a === 'ver-pass') { const i = $('#c-password'); i.type = i.type === 'password' ? 'text' : 'password'; b.textContent = i.type === 'password' ? 'Mostrar' : 'Ocultar'; }
+    else if (a === 'ver-sem') { ui.tab = 'actividades'; ui.fSem = b.dataset.sem; ui.fEst = b.dataset.sem === 'done' ? 'completadas' : 'abiertas'; history.replaceState(null, '', '#actividades'); render(); window.scrollTo(0, 0); }
+    else if (a === 'new-t') { if (!st.empresas.length) { toast('Primero registra una empresa'); return; } formTarea(); }
+    else if (a === 'edit-t') formTarea(id);
+    else if (a === 'new-p') formPersona();
+    else if (a === 'edit-p') formPersona(id);
+    else if (a === 'new-e') formEmpresa();
+    else if (a === 'edit-e') formEmpresa(id);
+    else if (a === 'plan') formPlan(id);
+    else if (a === 'plan-go') {
+      b.disabled = true; b.textContent = 'Creando actividades…';
+      const r = await escribir('POST', `/api/empresas/${id}/plan`);
+      closeSheet(); toast(`Plan cargado: ${r.creadas} actividades`);
+    } else if (a === 'enviar-uno') {
+      b.disabled = true; b.textContent = 'Enviando…';
+      const r = await escribir('POST', '/api/orden/enviar', { personaId: ui.ordenPer });
+      toast(r.enviados ? 'Orden del día enviada' : 'No se envió. Revisa el detalle del último envío.');
+    } else if (a === 'del') {
+      const col = b.dataset.col;
+      if (b.dataset.armed !== '1') {
+        const extra = col === 'empresas' ? st.tareas.filter((t) => t.empresaId === id).length : 0;
+        b.dataset.armed = '1'; b.textContent = extra ? `Confirmar: eliminar con sus ${extra} actividades` : 'Confirmar eliminación'; return;
+      }
+      b.disabled = true;
+      await escribir('DELETE', `/api/${col}/${id}`, null, 'Eliminado'); closeSheet();
+    }
+  } catch (e) { b.disabled = false; showErr(e.message); if (a === 'enviar-uno' || a === 'plan-go') render(); }
+});
+document.addEventListener('change', async (ev) => {
+  if (ev.target.id === 'c-proveedor') { aplicarProveedor(ev.target.value); return; }
+  const f = ev.target.dataset.f;
+  if (f) { ui[f] = ev.target.value; if (f === 'fEmp' || f === 'fPer') saveUi(); render(); return; }
+  const tid = ev.target.dataset.estado;
+  if (tid) {
+    const v = ev.target.value;
+    try { await escribir('PATCH', `/api/tareas/${tid}/estado`, { estado: v }, v === 'Completada' ? 'Actividad completada' : 'Estado actualizado'); }
+    catch (e) { toast(e.message); render(); }
+  }
+});
+document.addEventListener('submit', async (ev) => {
+  if (ev.target.id === 'frm-correo') { ev.preventDefault(); guardarCorreo(ev.submitter && ev.submitter.value === 'probar'); return; }
+  if (ev.target.id !== 'frm') return;
+  ev.preventDefault();
+  const f = ev.target, k = f.dataset.kind, id = f.dataset.id || null, btn = f.querySelector('button[type=submit]');
+  let path, data;
+  if (k === 't') {
+    const resp = [...f.querySelectorAll('input[name=resp]:checked')].map((i) => i.value);
+    data = { titulo: $('#t-titulo').value.trim(), empresaId: $('#t-emp').value, fecha: $('#t-fecha').value, inicio: $('#t-inicio').value, prioridad: $('#t-prio').value, estado: $('#t-estado').value, descripcion: $('#t-desc').value.trim(), responsables: resp };
+    if (!data.titulo || !data.empresaId || !data.fecha) return showErr('Completa la actividad, la empresa y la fecha compromiso.');
+    if (!resp.length) return showErr('Asigna al menos un responsable.');
+    if (data.inicio && data.inicio > data.fecha) return showErr('La fecha de inicio no puede ser posterior a la fecha compromiso.');
+    path = '/api/tareas';
+  } else if (k === 'p') {
+    data = { nombre: $('#p-nombre').value.trim(), email: $('#p-email').value.trim(), perfil: $('#p-perfil').value, lider: $('#p-lider').checked, activo: $('#p-activo').checked, empresas: [...f.querySelectorAll('input[name=emp]:checked')].map((i) => i.value) };
+    if (!data.nombre) return showErr('Escribe el nombre.');
+    path = '/api/personal';
+  } else {
+    data = { nombre: $('#e-nombre').value.trim(), contacto: $('#e-contacto').value.trim(), inicio: $('#e-inicio').value, notas: $('#e-notas').value.trim() };
+    if (!data.nombre) return showErr('Escribe el nombre de la empresa.');
+    path = '/api/empresas';
+  }
+  btn.disabled = true;
+  try { await escribir(id ? 'PUT' : 'POST', id ? `${path}/${id}` : path, data, id ? 'Cambios guardados' : 'Registro creado'); closeSheet(); }
+  catch (e) { btn.disabled = false; showErr(e.message); }
+});
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !$('#overlay').hidden) closeSheet(); });
+window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (TABS.includes(h) && h !== ui.tab) { ui.tab = h; render(); } });
+
+// Actualiza cada 30 s mientras la pestaña está visible y no hay un formulario abierto.
+setInterval(() => { if (document.visibilityState === 'visible' && $('#overlay').hidden && st.status === 'ready' && ui.tab !== 'correo') { st.hoy = hoyCDMX(); cargar(); } }, 30000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && $('#overlay').hidden && st.status === 'ready' && ui.tab !== 'correo') cargar(); });
+cargar();
+</script>
+</body>
+</html>

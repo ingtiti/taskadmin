@@ -1,0 +1,45 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "control-campanas",
+  "main": "src/index.js",
+  "compatibility_date": "2026-06-01",
+  // nodejs_compat lo requiere worker-mailer (cliente SMTP sobre sockets TCP).
+  "compatibility_flags": ["nodejs_compat"],
+
+  // La app (HTML/JS) se sirve desde public/; solo /api/* pasa por el Worker.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+
+  // Base de datos D1. Pega aquí el database_id que te da `npx wrangler d1 create control-campanas`.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "control-campanas",
+      "database_id": "REEMPLAZAR_CON_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // 14:00 UTC = 8:00 en Ciudad de México, de lunes a viernes.
+  "triggers": { "crons": ["0 14 * * 1-5"] },
+
+  // La cuenta de correo de envío se configura dentro de la app (módulo Correo).
+  // Su contraseña se cifra con el secreto CLAVE_CORREO: npx wrangler secret put CLAVE_CORREO
+  "vars": {
+    "APP_URL": "https://campanas.titi-apps.com",
+    "ADMIN_EMAILS": "beto.garcia@titi-apps.com",
+    // De Zero Trust > Settings > Custom Pages (team domain) y de la aplicación de Access (Application Audience tag).
+    "ACCESS_TEAM_DOMAIN": "REEMPLAZAR.cloudflareaccess.com",
+    "ACCESS_AUD": "REEMPLAZAR_CON_AUD_TAG"
+  },
+
+  // Dominio propio; la app solo se publica ahí (protegida por Cloudflare Access).
+  "routes": [{ "pattern": "campanas.titi-apps.com", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false,
+
+  "observability": { "enabled": true }
+}

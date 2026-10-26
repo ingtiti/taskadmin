@@ -1,0 +1,19 @@
+{
+  "name": "control-campanas",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Control de Campañas LinkedIn de TiTi-Apps: actividades, semáforo, personal y orden del día por correo.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --test-scheduled",
+    "db:migrar:local": "wrangler d1 migrations apply control-campanas --local",
+    "db:migrar": "wrangler d1 migrations apply control-campanas --remote",
+    "deploy": "wrangler d1 migrations apply control-campanas --remote && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  },
+  "dependencies": {
+    "worker-mailer": "^1.3.0"
+  }
+}

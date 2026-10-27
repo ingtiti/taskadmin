@@ -32,8 +32,8 @@
     "APP_URL": "https://campanas.titi-apps.com",
     "ADMIN_EMAILS": "beto.garcia@titi-apps.com",
     // De Zero Trust > Settings > Custom Pages (team domain) y de la aplicación de Access (Application Audience tag).
-    "ACCESS_TEAM_DOMAIN": "REEMPLAZAR.cloudflareaccess.com",
-    "ACCESS_AUD": "REEMPLAZAR_CON_AUD_TAG"
+    "ACCESS_TEAM_DOMAIN": "titiapps.cloudflareaccess.com",
+    "ACCESS_AUD": "12301b7b7fcda0d45c5e51ac2144ad1c1be39dd8a79f6a0deb5f9478895073e8"
   },
 
   // Dominio propio; la app solo se publica ahí (protegida por Cloudflare Access).

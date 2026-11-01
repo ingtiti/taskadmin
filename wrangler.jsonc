@@ -23,6 +23,14 @@
     }
   ],
 
+  // Bucket R2 con los archivos de cada empresa. Créalo una vez: npx wrangler r2 bucket create control-campanas-archivos
+  "r2_buckets": [
+    {
+      "binding": "ARCHIVOS",
+      "bucket_name": "control-campanas-archivos"
+    }
+  ],
+
   // 14:00 UTC = 8:00 en Ciudad de México, de lunes a viernes.
   "triggers": { "crons": ["0 14 * * 1-5"] },
 

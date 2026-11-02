@@ -164,6 +164,18 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .mail iframe{display:block}
 @media (max-width:560px){header.top{position:static}.bar{gap:12px}}
 .btn-link{all:unset;cursor:pointer;color:var(--accent);font-weight:600;font-size:12px}
+/* archivos de empresa */
+.files{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;max-height:340px;overflow:auto}
+.files li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
+.files li:first-child{border-top:0}
+.files .fn{font-weight:600;overflow-wrap:anywhere;color:var(--accent);text-decoration:none}
+.files .fn:hover{text-decoration:underline}
+.files .fd{font-size:13px;margin-top:2px;overflow-wrap:anywhere}
+.files .fm{font-size:12px;color:var(--muted);margin-top:2px}
+.upload{display:flex;flex-direction:column;gap:10px;border:1px dashed var(--line);border-radius:10px;padding:12px;background:var(--surface-2)}
+.upload input[type=file]{max-width:100%}
+.counter{font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+progress{width:100%;height:8px}
 </style>
 </head>
 <body>
@@ -347,7 +359,7 @@ function vEmpresas() {
     <dl class="kv"><dt>Contacto</dt><dd>${esc(e.contacto || '—')}</dd><dt>Arranque</dt><dd>${e.inicio ? fmtLargo(e.inicio) : '<span class="err">Sin fecha</span>'}</dd><dt>Equipo</dt><dd>${equipo.map((p) => esc(p.nombre)).join(', ') || '<span class="muted">Sin asignar</span>'}</dd></dl>
     ${te.length ? segbar(c) : ''}
     ${e.notas ? `<p class="t-desc" style="margin:0">${esc(e.notas)}</p>` : ''}
-    ${esLider() ? `<div class="acts"><button class="btn small" data-act="edit-e" data-id="${e.id}">Editar</button><button class="btn small ${te.length ? '' : 'primary'}" data-act="plan" data-id="${e.id}">${te.length ? 'Volver a cargar plan' : 'Cargar plan de trabajo'}</button></div>` : ''}</article>`;
+    <div class="acts">${esLider() ? `<button class="btn small" data-act="edit-e" data-id="${e.id}">Editar</button><button class="btn small ${te.length ? '' : 'primary'}" data-act="plan" data-id="${e.id}">${te.length ? 'Volver a cargar plan' : 'Cargar plan de trabajo'}</button>` : ''}<button class="btn small" data-act="archivos" data-id="${e.id}">Archivos (${e.archivos || 0})</button></div></article>`;
   }).join('');
   return `<div class="head"><div><h1>Empresas</h1><p class="sub">Campañas en ejecución en paralelo. El plan de trabajo crea las actividades de 6 meses a partir de la fecha de arranque.</p></div>${esLider() ? '<button class="btn primary" data-act="new-e">Nueva empresa</button>' : ''}</div>
   ${st.empresas.length ? `<div class="cards">${cards}</div>` : '<div class="panel"><div class="empty"><b>Sin empresas registradas</b>Agrega cada cliente con su fecha de arranque.</div></div>'}`;
@@ -482,7 +494,7 @@ async function guardarCorreo(probar) {
 
 /* ---------- formularios ---------- */
 function openSheet(html) { $('#sheet').innerHTML = html; $('#overlay').hidden = false; const f = $('#sheet input,#sheet select,#sheet textarea'); if (f) f.focus(); }
-function closeSheet() { $('#overlay').hidden = true; $('#sheet').innerHTML = ''; }
+function closeSheet() { const conArchivos = !!$('#archivos'); $('#overlay').hidden = true; $('#sheet').innerHTML = ''; if (conArchivos) render(); }
 const shHead = (t) => `<div class="sh"><h2 id="sheet-title">${t}</h2><button class="btn small" data-act="close" type="button">Cerrar</button></div>`;
 const showErr = (m) => { const el = $('#frm-err'); if (el) { el.hidden = false; el.textContent = m; } else toast(m); };
 
@@ -524,6 +536,74 @@ function formEmpresa(id) {
     <p class="err" id="frm-err" hidden></p>
     <div class="foot">${id ? `<button class="btn danger" type="button" data-act="del" data-col="empresas" data-id="${id}">Eliminar</button>` : '<span></span>'}<button class="btn primary" type="submit">${id ? 'Guardar cambios' : 'Crear empresa'}</button></div></form>`);
 }
+/* ---------- archivos de empresa ---------- */
+const MAX_DESC_ARCHIVO = 150, MAX_ARCHIVO_MB = 100;
+const fmtTam = (b) => (b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1048576).toFixed(1)} MB`);
+const fmtCuando = (s) => { const d = new Date(String(s).replace(' ', 'T') + 'Z'); return Number.isNaN(+d) ? '' : d.toLocaleString('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'medium', timeStyle: 'short' }); };
+let archivosSeq = 0;
+function formArchivos(id) {
+  const e = empById[id]; if (!e) return;
+  openSheet(shHead('Archivos · ' + esc(e.nombre)) + `<div class="sb" id="archivos" data-id="${id}">
+    ${puedeEditar() ? `<form class="upload" id="frm-archivo" data-id="${id}">
+      <label class="f"><span>Archivo (máximo ${MAX_ARCHIVO_MB} MB)</span><input type="file" id="a-file" required></label>
+      <label class="f"><span>Descripción</span><input type="text" id="a-desc" required maxlength="${MAX_DESC_ARCHIVO}" placeholder="Ej. Brief de la campaña aprobado por el cliente"></label>
+      <div class="counter" id="a-count">0 / ${MAX_DESC_ARCHIVO}</div>
+      <progress id="a-prog" max="100" value="0" hidden></progress>
+      <p class="err" id="frm-err" hidden></p>
+      <div class="foot"><span></span><button class="btn primary" type="submit">Agregar archivo</button></div>
+    </form>` : '<p class="muted" style="margin:0">Solo el personal registrado puede agregar archivos.</p>'}
+    <div id="archivos-lista" class="muted">Cargando archivos…</div></div>`);
+  cargarArchivos(id);
+}
+async function cargarArchivos(id) {
+  const seq = ++archivosSeq, box = $('#archivos-lista');
+  if (!box) return;
+  try {
+    const lista = await api('GET', `/api/empresas/${id}/archivos`);
+    if (seq !== archivosSeq || !$('#archivos-lista')) return;
+    const e = empById[id]; if (e) e.archivos = lista.length;
+    box.className = '';
+    box.innerHTML = lista.length ? `<ul class="files">${lista.map((a) => {
+      const borra = esLider() || a.subidoPor === st.yo?.email;
+      return `<li><div><a class="fn" href="/api/archivos/${a.id}" download>${esc(a.nombre)}</a><div class="fd">${esc(a.descripcion)}</div><div class="fm">${fmtTam(a.tamano)} · ${esc(fmtCuando(a.creado))} · ${esc(a.subidoPor)}</div></div>
+        <div class="t-act">${borra ? `<button class="btn small danger" type="button" data-act="del-archivo" data-id="${a.id}">Eliminar</button>` : ''}</div></li>`;
+    }).join('')}</ul>` : '<div class="empty"><b>Sin archivos</b>Agrega el primero con su descripción.</div>';
+  } catch (err) { if (seq === archivosSeq && $('#archivos-lista')) { box.className = 'err'; box.textContent = err.message; } }
+}
+// XMLHttpRequest en lugar de fetch para mostrar el avance de la carga.
+function subirArchivo(empresaId, file, descripcion, onProg) {
+  return new Promise((resolve, reject) => {
+    const x = new XMLHttpRequest();
+    x.open('POST', `/api/empresas/${empresaId}/archivos?nombre=${encodeURIComponent(file.name)}&descripcion=${encodeURIComponent(descripcion)}`);
+    x.withCredentials = true;
+    x.setRequestHeader('content-type', file.type || 'application/octet-stream');
+    x.upload.onprogress = (ev) => { if (ev.lengthComputable) onProg(Math.round((ev.loaded / ev.total) * 100)); };
+    x.onerror = () => reject(new Error('Sin conexión. Revisa tu internet e intenta de nuevo.'));
+    x.onload = () => {
+      let d = null; try { d = JSON.parse(x.responseText); } catch (e) {}
+      if (!d) return reject(Object.assign(new Error('Tu sesión expiró. Recarga la página para entrar de nuevo.'), { status: 401 }));
+      if (x.status >= 400) return reject(new Error(d.error || 'No se pudo subir el archivo.'));
+      resolve(d);
+    };
+    x.send(file);
+  });
+}
+async function enviarArchivo(f) {
+  const id = f.dataset.id, file = $('#a-file').files[0], desc = $('#a-desc').value.trim(), btn = f.querySelector('button[type=submit]'), prog = $('#a-prog');
+  if (!file) return showErr('Elige un archivo.');
+  if (!file.size) return showErr('El archivo está vacío.');
+  if (file.size > MAX_ARCHIVO_MB * 1048576) return showErr(`El archivo pesa más de ${MAX_ARCHIVO_MB} MB.`);
+  if (!desc) return showErr('Escribe una descripción del archivo.');
+  if (desc.length > MAX_DESC_ARCHIVO) return showErr(`La descripción admite hasta ${MAX_DESC_ARCHIVO} caracteres.`);
+  $('#frm-err').hidden = true; btn.disabled = true; btn.textContent = 'Subiendo…'; prog.hidden = false; prog.value = 0;
+  try {
+    await subirArchivo(id, file, desc, (v) => (prog.value = v));
+    toast('Archivo agregado'); f.reset(); $('#a-count').textContent = `0 / ${MAX_DESC_ARCHIVO}`;
+    await cargarArchivos(id);
+  } catch (e) { showErr(e.message); }
+  btn.disabled = false; btn.textContent = 'Agregar archivo'; prog.hidden = true;
+}
+
 const N_PLAN = 44;
 function formPlan(id) {
   const e = empById[id]; if (!e) return;
@@ -561,6 +641,13 @@ document.addEventListener('click', async (ev) => {
     else if (a === 'new-e') formEmpresa();
     else if (a === 'edit-e') formEmpresa(id);
     else if (a === 'plan') formPlan(id);
+    else if (a === 'archivos') formArchivos(id);
+    else if (a === 'del-archivo') {
+      if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'Confirmar'; return; }
+      b.disabled = true;
+      await api('DELETE', `/api/archivos/${id}`); toast('Archivo eliminado');
+      await cargarArchivos($('#archivos').dataset.id);
+    }
     else if (a === 'plan-go') {
       b.disabled = true; b.textContent = 'Creando actividades…';
       const r = await escribir('POST', `/api/empresas/${id}/plan`);
@@ -592,6 +679,7 @@ document.addEventListener('change', async (ev) => {
   }
 });
 document.addEventListener('submit', async (ev) => {
+  if (ev.target.id === 'frm-archivo') { ev.preventDefault(); enviarArchivo(ev.target); return; }
   if (ev.target.id === 'frm-correo') { ev.preventDefault(); guardarCorreo(ev.submitter && ev.submitter.value === 'probar'); return; }
   if (ev.target.id !== 'frm') return;
   ev.preventDefault();
@@ -617,6 +705,7 @@ document.addEventListener('submit', async (ev) => {
   try { await escribir(id ? 'PUT' : 'POST', id ? `${path}/${id}` : path, data, id ? 'Cambios guardados' : 'Registro creado'); closeSheet(); }
   catch (e) { btn.disabled = false; showErr(e.message); }
 });
+document.addEventListener('input', (ev) => { if (ev.target.id === 'a-desc') $('#a-count').textContent = `${ev.target.value.length} / ${MAX_DESC_ARCHIVO}`; });
 document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !$('#overlay').hidden) closeSheet(); });
 window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (TABS.includes(h) && h !== ui.tab) { ui.tab = h; render(); } });
 

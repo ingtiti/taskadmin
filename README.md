@@ -6,6 +6,7 @@ App de TiTi-Apps para el servicio de generación y calificación de contactos en
 - **Actividades:** cada una con empresa, uno o varios responsables, fecha de inicio, fecha compromiso, prioridad y estado.
 - **Personal:** perfiles Admin, Project manager, Community manager, Diseñador gráfico, Telemarketer y Analista de datos; líderes globales; empresas asignadas.
 - **Empresas:** fecha de arranque y botón para cargar el plan de trabajo de 6 meses (44 actividades asignadas por perfil).
+- **Archivos por empresa:** botón **Archivos** en cada empresa para subir cualquier cantidad de archivos (hasta 100 MB cada uno), cada uno con una descripción de hasta 150 caracteres.
 - **Orden del día:** correo automático a las 8:00 (lunes a viernes, hora de Ciudad de México) a cada persona con sus actividades abiertas.
 - **Correo:** la cuenta que envía la orden del día se configura desde la app como en cualquier programa de correo (SMTP + IMAP). Por ahora: `tdsynnex@titi-apps.com`.
 
@@ -17,6 +18,28 @@ App de TiTi-Apps para el servicio de generación y calificación de contactos en
 - Ya no hace falta verificar `titi-apps.com` en Email Service ni agregar sus registros DNS.
 - Si ya publicaste la versión 1: haz push de esta versión (la migración `0003_cuenta_correo.sql` se aplica sola), crea el secreto `CLAVE_CORREO` (paso 3) y configura la cuenta en **Correo**.
 
+## Archivos por empresa (versión 2.1)
+
+- Cada tarjeta de **Empresas** tiene el botón **Archivos (n)**: lista los archivos con su descripción, tamaño, fecha y quién lo subió; se descargan con un clic.
+- **Subir:** cualquier persona registrada en Personal. **Eliminar:** quien lo subió o un líder global. Quien solo consulta puede verlos y descargarlos.
+- Sin límite de cantidad. Cada archivo: máximo 100 MB (límite de cuerpo de petición de Workers en planes Free y Pro) y descripción obligatoria de hasta 150 caracteres.
+- El contenido se guarda en **R2** (bucket `control-campanas-archivos`); en D1 solo quedan los datos del archivo (tabla `empresa_archivos`, migración `0004`). Subidas y eliminaciones quedan en `historial`.
+- Al eliminar una empresa se borran también sus archivos.
+
+**Configuración adicional (una sola vez, antes del push):**
+
+1. Activa R2 en la cuenta: Cloudflare > **R2 Object Storage** > *Purchase R2 Plan / Activar* (el plan gratuito incluye 10 GB al mes, pero Cloudflare pide un método de pago para activarlo).
+2. Crea el bucket (o desde el panel de R2 > *Create bucket* con el mismo nombre):
+
+```bash
+npx wrangler r2 bucket create control-campanas-archivos
+```
+
+3. Haz push. El deploy aplica la migración `0004_empresa_archivos.sql` y conecta el bucket como `ARCHIVOS` (ya está en `wrangler.jsonc`). Si el bucket no existe, el deploy falla.
+4. Si el token de API de Workers Builds es personalizado, dale también permiso **Workers R2 Storage: Edit**.
+
+No hace falta cambiar Cloudflare Access: las descargas pasan por `/api/*` y van protegidas igual que el resto de la app. El bucket queda privado (no actives acceso público ni dominio en R2).
+
 ## Cómo está hecha
 
 | Pieza | Servicio de Cloudflare | Dónde está |
@@ -24,6 +47,7 @@ App de TiTi-Apps para el servicio de generación y calificación de contactos en
 | Pantalla (HTML + JS) | Workers Static Assets | `public/` |
 | API | Worker | `src/index.js` |
 | Base de datos | D1 (SQLite) | `migrations/` |
+| Archivos de empresas | R2 | `src/index.js` (rutas `/api/empresas/:id/archivos` y `/api/archivos/:id`) |
 | Inicio de sesión | Cloudflare Access (Zero Trust) | `src/auth.js` |
 | Correo de las 8:00 | Cron Trigger | `src/orden.js` |
 | Envío por SMTP | Sockets TCP + [worker-mailer](https://www.npmjs.com/package/worker-mailer) | `src/correo.js` |
@@ -162,6 +186,7 @@ En `.dev.vars` pon una `CLAVE_CORREO` propia (`openssl rand -base64 32`). Abre `
 - Cambios a la base de datos: crea un archivo nuevo en `migrations/` (`npx wrangler d1 migrations create control-campanas descripcion`). No edites migraciones ya aplicadas.
 - Para regresar a una versión anterior: Cloudflare > Workers > control-campanas > **Deployments > Rollback**, o `git revert` y push.
 - Respaldo de datos: `npx wrangler d1 export control-campanas --remote --output respaldo.sql`. D1 también permite restaurar a cualquier punto de los últimos 30 días (Time Travel).
+- Los archivos en R2 no entran en ese respaldo ni en Time Travel: un archivo eliminado desde la app no se puede recuperar.
 
 ## Ajustes frecuentes
 
@@ -172,3 +197,4 @@ En `.dev.vars` pon una `CLAVE_CORREO` propia (`openssl rand -base64 32`). Abre `
 | Umbrales del semáforo | función `sem()` en `public/js/logica.js` |
 | Actividades del plan de 6 meses | `planBase()` en `src/plan.js` (y `N_PLAN` en `public/index.html`) |
 | Subdominio | `routes` y `APP_URL` en `wrangler.jsonc`, y la aplicación de Access |
+| Tamaño máximo o largo de descripción de archivos | `MAX_ARCHIVO` / `MAX_DESC_ARCHIVO` en `src/index.js` y `MAX_ARCHIVO_MB` / `MAX_DESC_ARCHIVO` en `public/index.html` |

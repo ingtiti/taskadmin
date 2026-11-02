@@ -74,6 +74,30 @@ function valCuenta(b) {
   };
 }
 
+/* ---------- archivos de empresa ---------- */
+// Workers acepta cuerpos de hasta 100 MB en los planes Free y Pro (200 MB en Business).
+const MAX_ARCHIVO = 100 * 1024 * 1024;
+const MAX_DESC_ARCHIVO = 150;
+function r2(env) {
+  if (!env.ARCHIVOS) throw new HttpError(503, 'El almacenamiento de archivos (R2) no está configurado.');
+  return env.ARCHIVOS;
+}
+function valArchivo(req, url) {
+  const nombre = String(url.searchParams.get('nombre') ?? '').replace(/[\u0000-\u001f\u007f\\/]/g, '').trim();
+  if (!nombre) throw new HttpError(400, 'Falta el nombre del archivo.');
+  if (nombre.length > 200) throw new HttpError(400, 'El nombre del archivo es demasiado largo (máximo 200 caracteres).');
+  const descripcion = String(url.searchParams.get('descripcion') ?? '').trim();
+  if (!descripcion) throw new HttpError(400, 'Escribe una descripción del archivo.');
+  if (descripcion.length > MAX_DESC_ARCHIVO) throw new HttpError(400, `La descripción admite hasta ${MAX_DESC_ARCHIVO} caracteres.`);
+  const tamano = Number(req.headers.get('content-length'));
+  if (!Number.isInteger(tamano) || tamano <= 0) throw new HttpError(400, 'El archivo está vacío.');
+  if (tamano > MAX_ARCHIVO) throw new HttpError(413, `El archivo pesa más de ${MAX_ARCHIVO / 1024 / 1024} MB.`);
+  const tipo = String(req.headers.get('content-type') || '').slice(0, 120) || 'application/octet-stream';
+  return { nombre, descripcion, tamano, tipo: /^[\w.+-]+\/[\w.+-]+$/.test(tipo) ? tipo : 'application/octet-stream' };
+}
+// Siempre como descarga y en "sandbox", para que un HTML o SVG subido nunca se ejecute dentro de la app.
+const disposicion = (n) => `attachment; filename="${n.replace(/[^\x20-\x7e]|["\\]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(n)}`;
+
 async function body(req) {
   try { return (await req.json()) || {}; } catch { throw new HttpError(400, 'Solicitud no válida.'); }
 }
@@ -133,10 +157,49 @@ async function api(req, env, url) {
     await datos.crearPlan(env, e.id, lista, email);
     return json({ creadas: lista.length }, 201);
   }
+  if ((r = p.match(/^\/api\/empresas\/([\w-]+)\/archivos$/))) {
+    const empresaId = r[1];
+    if (m === 'GET') return json(await datos.listarArchivos(env, empresaId));
+    if (m === 'POST') {
+      registrado(yo);
+      const bucket = r2(env);
+      if (!(await datos.existe(env, 'empresas', empresaId))) throw new HttpError(404, 'La empresa no existe.');
+      const a = valArchivo(req, url);
+      const id = crypto.randomUUID(), clave = `empresas/${empresaId}/${id}`;
+      await bucket.put(clave, req.body, { httpMetadata: { contentType: a.tipo }, customMetadata: { empresaId, subidoPor: email } });
+      try { await datos.crearArchivo(env, { id, empresaId, clave, ...a }, email); }
+      catch (e) { await bucket.delete(clave); throw e; }
+      return json({ id }, 201);
+    }
+  }
+  if ((r = p.match(/^\/api\/archivos\/([\w-]+)$/))) {
+    const a = await datos.leerArchivo(env, r[1]);
+    if (!a) throw new HttpError(404, 'El archivo ya no existe.');
+    if (m === 'GET') {
+      const obj = await r2(env).get(a.clave);
+      if (!obj) throw new HttpError(404, 'El archivo ya no está en el almacenamiento.');
+      return new Response(obj.body, { headers: {
+        'content-type': a.tipo, 'content-length': String(obj.size), 'content-disposition': disposicion(a.nombre),
+        'x-content-type-options': 'nosniff', 'content-security-policy': 'sandbox', 'cache-control': 'private, no-store',
+      } });
+    }
+    if (m === 'DELETE') {
+      // Lo borra un líder global o quien lo subió.
+      if (!yo.esLider && a.subidoPor !== email) throw new HttpError(403, 'Solo quien subió el archivo o un líder global puede eliminarlo.');
+      await datos.borrarArchivo(env, a, email);
+      await r2(env).delete(a.clave);
+      return json({ ok: true });
+    }
+  }
   if ((r = p.match(/^\/api\/empresas\/([\w-]+)$/))) {
     lider(yo);
     if (m === 'PUT') { await datos.guardarEmpresa(env, r[1], valEmpresa(await body(req)), email, false); return json({ ok: true }); }
-    if (m === 'DELETE') { await datos.borrarEmpresa(env, r[1], email); return json({ ok: true }); }
+    if (m === 'DELETE') {
+      const claves = await datos.clavesArchivosEmpresa(env, r[1]);
+      await datos.borrarEmpresa(env, r[1], email);
+      for (let i = 0; i < claves.length; i += 1000) await r2(env).delete(claves.slice(i, i + 1000));
+      return json({ ok: true });
+    }
   }
 
   // Personal

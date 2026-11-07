@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" role="img" aria-label="Titiapps">
+  <!-- Logo provisional: reemplaza este archivo por el logo oficial de Titiapps (mismo nombre) o cambia la ruta en el pie de página. -->
+  <rect x="2" y="6" width="36" height="36" rx="10" fill="#1a56db"/>
+  <path d="M12 17h16M20 17v16" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="30" cy="31" r="3" fill="#f5b301"/>
+  <text x="48" y="32" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="22" font-weight="700" fill="currentColor">Titiapps</text>
+</svg>

@@ -1,0 +1,50 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "asesorias-beto-garcia",
+  "main": "src/index.js",
+  "compatibility_date": "2026-06-01",
+  // nodejs_compat lo requiere worker-mailer (solo se usa si eliges el modo SMTP).
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Pantallas (HTML/CSS/JS) en public/. Solo /api/* pasa por el Worker.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+
+  // Base de datos D1. Pega aquí el database_id que imprime: npx wrangler d1 create asesorias-beto-garcia
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "asesorias-beto-garcia",
+      "database_id": "REEMPLAZAR_CON_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "vars": {
+    "APP_URL": "https://asesorias.titi-apps.com",
+    // Únicas cuentas que pueden entrar al panel /admin (separadas por coma).
+    "ADMIN_EMAILS": "beto.garcia@titi-apps.com",
+    "ZONA_HORARIA": "America/Mexico_City",
+    // Horas mínimas de anticipación para reservar y máximo de citas próximas por correo (0 = sin límite).
+    "ANTICIPACION_HORAS": "2",
+    "MAX_RESERVAS_POR_EMAIL": "2",
+    // Cloudflare Access (Zero Trust): team domain y Application Audience (AUD) tag de la app que protege /admin.
+    "ACCESS_TEAM_DOMAIN": "titiapps.cloudflareaccess.com",
+    "ACCESS_AUD": "REEMPLAZAR_CON_AUD_DE_ACCESS",
+    // Opcional: anti-robots Cloudflare Turnstile (el secreto va con: npx wrangler secret put TURNSTILE_SECRET).
+    "TURNSTILE_SITEKEY": ""
+  },
+  // Secretos (nunca aquí): CLAVE_CIFRADO (obligatorio) y TURNSTILE_SECRET (opcional).
+
+  // Cada 10 minutos reintenta las reservas cuyo procesamiento (correos/eventos) quedó pendiente.
+  "triggers": { "crons": ["*/10 * * * *"] },
+
+  "routes": [{ "pattern": "asesorias.titi-apps.com", "custom_domain": true }],
+  "workers_dev": true,
+  "preview_urls": false,
+
+  "observability": { "enabled": true }
+}

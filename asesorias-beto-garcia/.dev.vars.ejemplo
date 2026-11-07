@@ -1,0 +1,7 @@
+# Copia este archivo como .dev.vars (nunca se sube a GitHub) para probar en tu computadora.
+# ENTORNO y DEV_USER_EMAIL saltan Cloudflare Access: NUNCA los configures en Cloudflare.
+ENTORNO=desarrollo
+DEV_USER_EMAIL=beto.garcia@titi-apps.com
+APP_URL=http://localhost:8787
+# Genera tu propia clave con: openssl rand -base64 32
+CLAVE_CIFRADO=

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Administración · Calendario de Asesorías Beto García</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <header class="encabezado">
+    <div class="contenedor">
+      <img class="icono" src="/favicon.svg" alt="">
+      <div>
+        <h1>Calendario de Asesorías Beto García</h1>
+        <p>Panel de administración</p>
+      </div>
+      <div class="derecha"><span id="yo">…</span> · <a href="/" style="color:#fff">Ver calendario público</a></div>
+    </div>
+  </header>
+
+  <main>
+    <div class="contenedor">
+      <div id="mensaje" class="aviso oculto" role="status" aria-live="polite"></div>
+      <nav class="pestanas" role="tablist">
+        <button role="tab" data-tab="espacios" aria-selected="true">Espacios</button>
+        <button role="tab" data-tab="reservas" aria-selected="false">Reservas</button>
+        <button role="tab" data-tab="configuracion" aria-selected="false">Correo y calendarios</button>
+        <button role="tab" data-tab="historial" aria-selected="false">Historial</button>
+      </nav>
+
+      <!-- ESPACIOS -->
+      <section id="tab-espacios" role="tabpanel">
+        <div class="tarjeta">
+          <h2>Publicar espacios disponibles</h2>
+          <p class="sub">Cada espacio dura 1 hora. Elige el rango de fechas, los días de la semana y las horas de inicio. Los horarios que ya existan o se traslapen se omiten.</p>
+          <form id="form-espacios">
+            <div class="dos-col">
+              <div class="campo"><label for="e-desde">Desde</label><input type="date" id="e-desde" required></div>
+              <div class="campo"><label for="e-hasta">Hasta</label><input type="date" id="e-hasta" required></div>
+            </div>
+            <div class="campo">
+              <label>Días de la semana</label>
+              <div class="dias-semana" id="e-dias"></div>
+            </div>
+            <div class="campo">
+              <label>Horas de inicio</label>
+              <div class="horas" id="e-horas"></div>
+              <div class="fila" style="margin-top:8px">
+                <input type="text" id="e-hora-extra" placeholder="Otra hora, ej. 16:30" style="max-width:200px" inputmode="numeric" pattern="\d{1,2}:\d{2}">
+                <button type="button" class="btn chico" id="e-agregar-hora">Agregar hora</button>
+              </div>
+            </div>
+            <div class="fila">
+              <button type="submit" class="btn primario" id="e-publicar">Publicar espacios</button>
+              <span id="e-conteo" class="sub" style="margin:0"></span>
+            </div>
+          </form>
+        </div>
+
+        <div class="tarjeta">
+          <div class="cal-nav">
+            <button class="btn" id="a-mes-ant" aria-label="Mes anterior">‹</button>
+            <h2 id="a-titulo-mes">…</h2>
+            <button class="btn" id="a-mes-sig" aria-label="Mes siguiente">›</button>
+          </div>
+          <p class="leyenda"><span class="l-disp">Disponible</span><span class="l-ocup">Ocupado</span></p>
+          <div id="a-lista"></div>
+        </div>
+      </section>
+
+      <!-- RESERVAS -->
+      <section id="tab-reservas" role="tabpanel" class="oculto">
+        <div class="tarjeta">
+          <div class="fila" style="justify-content:space-between">
+            <div><h2>Reservas</h2><p class="sub" style="margin:0">Estado de los correos y de los eventos en Exchange y Google Calendar de cada cita.</p></div>
+            <select id="r-filtro" style="max-width:200px" aria-label="Filtrar reservas">
+              <option value="proximas">Próximas</option>
+              <option value="pasadas">Pasadas</option>
+              <option value="canceladas">Canceladas</option>
+            </select>
+          </div>
+          <div id="r-lista" style="margin-top:14px"></div>
+        </div>
+      </section>
+
+      <!-- CONFIGURACIÓN -->
+      <section id="tab-configuracion" role="tabpanel" class="oculto">
+        <form id="form-cfg" class="tarjeta" autocomplete="off">
+          <h2>Correo y calendarios</h2>
+          <p class="sub">Datos del servidor de correo (Exchange) y de los calendarios donde se registra cada cita. Las contraseñas y secretos se guardan cifrados y nunca se muestran; déjalos vacíos para conservar los actuales.</p>
+          <div id="c-sin-clave" class="aviso error oculto">Falta el secreto <code>CLAVE_CIFRADO</code> en Cloudflare: no se pueden guardar contraseñas hasta crearlo (paso 4 del README).</div>
+
+          <div class="dos-col">
+            <div class="campo"><label for="c-nombreRemitente">Nombre del remitente</label><input id="c-nombreRemitente" type="text" maxlength="80" required></div>
+            <div class="campo"><label for="c-emailAdmin">Correo donde recibes los avisos</label><input id="c-emailAdmin" type="email" required><small>Recibe la confirmación de cada nueva cita.</small></div>
+          </div>
+          <div class="campo"><label for="c-lugar">Lugar o enlace de la sesión (opcional)</label><input id="c-lugar" type="text" maxlength="300" placeholder="Ej. https://zoom.us/j/… o la dirección de tu oficina"></div>
+          <div class="campo"><label for="c-mensajeExtra">Mensaje adicional en la confirmación (opcional)</label><textarea id="c-mensajeExtra" maxlength="1000" placeholder="Ej. Trae a la sesión tu modelo de negocio y tus dudas principales."></textarea></div>
+
+          <div class="seccion-cfg">
+            <h3>Servidor de correo</h3>
+            <p class="sub">Elige cómo se conecta la app a tu cuenta de Exchange.</p>
+            <label class="check"><input type="radio" name="modoCorreo" value="graph" id="c-modo-graph"> <span><strong>Exchange Online / Microsoft 365 (Microsoft Graph)</strong> — recomendado. Envía correos y crea el evento en tu calendario de Exchange.</span></label>
+            <label class="check"><input type="radio" name="modoCorreo" value="smtp" id="c-modo-smtp"> <span><strong>Servidor SMTP</strong> — para Exchange Server local u otro proveedor que acepte SMTP con usuario y contraseña.</span></label>
+          </div>
+
+          <div class="seccion-cfg" id="c-sec-graph">
+            <h3>Microsoft Graph (Exchange Online)</h3>
+            <p class="sub">De la app registrada en Microsoft Entra ID con permisos de aplicación <code>Mail.Send</code> y <code>Calendars.ReadWrite</code>. También se usa para el calendario de Exchange aunque envíes por SMTP.</p>
+            <div class="dos-col">
+              <div class="campo"><label for="c-graphTenant">Directory (tenant) ID</label><input id="c-graphTenant" type="text" placeholder="00000000-0000-0000-0000-000000000000"></div>
+              <div class="campo"><label for="c-graphClientId">Application (client) ID</label><input id="c-graphClientId" type="text"></div>
+              <div class="campo"><label for="c-graphSecreto">Client secret (valor)</label><input id="c-graphSecreto" type="password" autocomplete="new-password"><small id="c-graphSecreto-estado"></small></div>
+              <div class="campo"><label for="c-graphBuzon">Buzón de Exchange</label><input id="c-graphBuzon" type="email" placeholder="beto.garcia@titi-apps.com"><small>Desde aquí salen los correos y en su calendario se crean las citas.</small></div>
+            </div>
+            <label class="check"><input type="checkbox" id="c-exchangeCalendario"> <span>Crear cada cita en mi calendario de Exchange</span></label>
+            <label class="check"><input type="checkbox" id="c-exchangeTeams"> <span>Generar reunión de Microsoft Teams y enviar el enlace al asesorado</span></label>
+          </div>
+
+          <div class="seccion-cfg" id="c-sec-smtp">
+            <h3>Servidor SMTP</h3>
+            <div class="dos-col">
+              <div class="campo"><label for="c-smtpHost">Servidor</label><input id="c-smtpHost" type="text" placeholder="mail.titi-apps.com"></div>
+              <div class="campo"><label for="c-smtpPuerto">Puerto</label><input id="c-smtpPuerto" type="number" min="1" max="65535" placeholder="587"></div>
+              <div class="campo"><label for="c-smtpSeguridad">Seguridad</label>
+                <select id="c-smtpSeguridad"><option value="starttls">STARTTLS (587)</option><option value="ssl">SSL/TLS (465)</option><option value="ninguna">Ninguna</option></select></div>
+              <div class="campo"><label for="c-smtpEmail">Correo remitente</label><input id="c-smtpEmail" type="email"></div>
+              <div class="campo"><label for="c-smtpUsuario">Usuario</label><input id="c-smtpUsuario" type="text" autocomplete="off"></div>
+              <div class="campo"><label for="c-smtpPassword">Contraseña</label><input id="c-smtpPassword" type="password" autocomplete="new-password"><small id="c-smtpPassword-estado"></small></div>
+            </div>
+          </div>
+
+          <div class="seccion-cfg">
+            <h3>Réplica en Google Calendar (Gmail)</h3>
+            <p class="sub">Cada cita se copia a tu calendario de Gmail. Necesitas un cliente OAuth de Google Cloud (tipo "Aplicación web") con este URI de redireccionamiento autorizado: <code id="c-retorno"></code></p>
+            <label class="check"><input type="checkbox" id="c-googleActivo"> <span>Replicar cada cita en Google Calendar</span></label>
+            <div class="dos-col">
+              <div class="campo"><label for="c-googleClientId">Client ID de Google</label><input id="c-googleClientId" type="text"></div>
+              <div class="campo"><label for="c-googleSecreto">Client secret de Google</label><input id="c-googleSecreto" type="password" autocomplete="new-password"><small id="c-googleSecreto-estado"></small></div>
+              <div class="campo"><label for="c-googleCalendario">ID del calendario</label><input id="c-googleCalendario" type="text" placeholder="primary"><small><code>primary</code> = tu calendario principal de Gmail.</small></div>
+              <div class="campo"><label>Cuenta conectada</label><div class="fila"><span id="c-google-estado" class="etiqueta na">Sin conectar</span>
+                <a class="btn chico" id="c-google-conectar" href="/api/admin/google/conectar">Conectar con Google</a>
+                <button type="button" class="btn chico peligro oculto" id="c-google-desconectar">Desconectar</button></div>
+                <small>Guarda primero el Client ID y el secret; luego conecta.</small></div>
+            </div>
+          </div>
+
+          <div id="c-resultado" class="oculto" style="margin-top:12px"></div>
+          <div class="fila" style="margin-top:16px">
+            <button type="submit" class="btn primario">Guardar</button>
+            <button type="button" class="btn" id="c-probar">Guardar y probar conexión</button>
+            <button type="button" class="btn" id="c-enviar-prueba">Enviarme un correo de prueba</button>
+          </div>
+          <p class="sub" id="c-ultima" style="margin-top:12px"></p>
+        </form>
+      </section>
+
+      <!-- HISTORIAL -->
+      <section id="tab-historial" role="tabpanel" class="oculto">
+        <div class="tarjeta">
+          <h2>Historial</h2>
+          <p class="sub">Últimos 200 cambios hechos desde el panel.</p>
+          <div class="envoltura-tabla"><table class="tabla-simple"><thead><tr><th>Fecha (UTC)</th><th>Quién</th><th>Acción</th><th>Detalle</th></tr></thead><tbody id="h-lista"></tbody></table></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="dlg-cancelar" aria-labelledby="dc-titulo">
+    <form method="dialog" id="form-cancelar">
+      <div class="dlg-cab"><h2 id="dc-titulo">Cancelar reserva</h2><button type="button" class="cerrar" data-cerrar aria-label="Cerrar">×</button></div>
+      <div class="dlg-cuerpo">
+        <div class="resumen-cita" id="dc-resumen"></div>
+        <label class="check"><input type="checkbox" id="dc-liberar" checked> <span>Volver a poner el horario como disponible</span></label>
+        <label class="check"><input type="checkbox" id="dc-avisar" checked> <span>Enviar correo de cancelación al asesorado</span></label>
+        <p class="sub">Los eventos en Exchange y Google Calendar se eliminan automáticamente.</p>
+        <div class="fila" style="justify-content:flex-end">
+          <button type="button" class="btn" data-cerrar>Volver</button>
+          <button type="submit" class="btn peligro" id="dc-confirmar">Cancelar reserva</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <img src="/img/titiapps-logo.svg" alt="Titiapps">
+      <span>Desarrollado por <strong>Titiapps</strong> y <strong>Claude</strong></span>
+    </div>
+  </footer>
+  <script type="module" src="/js/admin.js"></script>
+</body>
+</html>

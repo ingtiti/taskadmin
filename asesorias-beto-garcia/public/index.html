@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calendario de Asesorías Beto García</title>
+  <meta name="description" content="Reserva tu sesión de asesoría personalizada de emprendimiento con Beto García.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body>
+  <header class="encabezado">
+    <div class="contenedor">
+      <img class="icono" src="/favicon.svg" alt="">
+      <div>
+        <h1>Calendario de Asesorías Beto García</h1>
+        <p>Asesorías personalizadas de emprendimiento · sesiones de 1 hora</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="contenedor">
+      <div id="mensaje" class="aviso oculto" role="status" aria-live="polite"></div>
+      <div class="cal-layout">
+        <section class="tarjeta" aria-labelledby="titulo-mes">
+          <div class="cal-nav">
+            <button class="btn" id="mes-ant" aria-label="Mes anterior">‹</button>
+            <h2 id="titulo-mes">…</h2>
+            <button class="btn" id="mes-sig" aria-label="Mes siguiente">›</button>
+          </div>
+          <p class="leyenda"><span class="l-disp">Disponible</span><span class="l-ocup">Ocupado</span></p>
+          <div class="semana" aria-hidden="true"><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div></div>
+          <div class="mes" id="mes" role="grid" aria-labelledby="titulo-mes"></div>
+        </section>
+
+        <section class="tarjeta horarios" aria-live="polite">
+          <h3 id="titulo-dia">Elige un día</h3>
+          <div id="horarios"><p class="vacio">Selecciona en el calendario un día marcado en verde para ver los horarios disponibles.</p></div>
+          <p class="zona" id="zona"></p>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="dlg" aria-labelledby="dlg-titulo">
+    <form id="form" method="dialog" novalidate>
+      <div class="dlg-cab">
+        <h2 id="dlg-titulo">Reservar asesoría</h2>
+        <button type="button" class="cerrar" id="cerrar" aria-label="Cerrar">×</button>
+      </div>
+      <div class="dlg-cuerpo">
+        <div class="campo"><label for="f-fecha">Fecha</label><input id="f-fecha" type="text" readonly tabindex="-1" aria-readonly="true"></div>
+        <div class="campo"><label for="f-hora">Horario</label><input id="f-hora" type="text" readonly tabindex="-1" aria-readonly="true"></div>
+        <div class="campo">
+          <label for="f-nombre">Nombre completo</label>
+          <input id="f-nombre" name="nombre" type="text" autocomplete="name" required minlength="5" maxlength="120" placeholder="Nombre y apellidos">
+        </div>
+        <div class="campo">
+          <label for="f-email">Correo electrónico</label>
+          <input id="f-email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="tu@correo.com">
+          <small>Aquí recibirás la confirmación con la invitación para tu calendario.</small>
+        </div>
+        <div id="turnstile" class="campo"></div>
+        <div id="f-error" class="aviso error oculto" role="alert"></div>
+        <div class="fila" style="justify-content:flex-end">
+          <button type="button" class="btn" id="cancelar">Cancelar</button>
+          <button type="submit" class="btn primario" id="enviar">Confirmar reserva</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <img src="/img/titiapps-logo.svg" alt="Titiapps">
+      <span>Desarrollado por <strong>Titiapps</strong> y <strong>Claude</strong></span>
+    </div>
+  </footer>
+  <script type="module" src="/js/calendario.js"></script>
+</body>
+</html>

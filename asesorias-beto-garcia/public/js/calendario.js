@@ -39,7 +39,8 @@ function pintarMes(dias) {
     const lista = estado.porDia.get(d.clave) || [];
     const disp = lista.filter((e) => e.estado === 'disponible').length;
     const ocup = lista.length - disp;
-    const pasado = d.clave < estado.hoy;
+    // Hoy y los días pasados no se pueden reservar: solo de mañana en adelante.
+    const pasado = d.clave <= estado.hoy;
     const clases = ['dia', pasado ? 'pasado' : '', d.clave === estado.hoy ? 'hoy' : '', disp && !pasado ? 'con-disp' : '', !disp && ocup && !pasado ? 'solo-ocup' : '', d.clave === estado.diaSel ? 'sel' : ''].join(' ');
     const marca = pasado ? '' : disp ? `${disp} disponible${disp > 1 ? 's' : ''}` : ocup ? 'Ocupado' : '';
     const clic = lista.length && !pasado;
@@ -131,7 +132,7 @@ async function iniciar() {
   estado.hoy = hoyEn(estado.zona);
   const [a, m] = estado.hoy.split('-').map(Number);
   estado.anio = a; estado.mes = m - 1;
-  $('zona').textContent = `Horarios en ${nombreZona(estado.zona)}. Cada sesión dura 1 hora.`;
+  $('zona').textContent = `Horarios en ${nombreZona(estado.zona)}. Cada sesión dura 1 hora e incluye enlace de videollamada. Puedes reservar de mañana en adelante.`;
 
   $('mes-ant').addEventListener('click', () => moverMes(-1));
   $('mes-sig').addEventListener('click', () => moverMes(1));
@@ -142,7 +143,7 @@ async function iniciar() {
   $('cancelar').addEventListener('click', () => $('dlg').close());
   await cargarMes();
   // Abre el primer día con espacios disponibles del mes para que se vea algo de inmediato.
-  const primero = [...estado.porDia.entries()].find(([k, l]) => k >= estado.hoy && l.some((e) => e.estado === 'disponible'));
+  const primero = [...estado.porDia.entries()].find(([k, l]) => k > estado.hoy && l.some((e) => e.estado === 'disponible'));
   if (primero) pintarDia(primero[0]);
   // Refresca cada minuto para reflejar espacios que otros acaban de ocupar.
   setInterval(() => { if (!$('dlg').open && document.visibilityState === 'visible') cargarMes(); }, 60_000);

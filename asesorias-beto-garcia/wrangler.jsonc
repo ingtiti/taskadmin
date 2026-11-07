@@ -28,8 +28,7 @@
     // Únicas cuentas que pueden entrar al panel /admin (separadas por coma).
     "ADMIN_EMAILS": "beto.garcia@titi-apps.com",
     "ZONA_HORARIA": "America/Mexico_City",
-    // Horas mínimas de anticipación para reservar y máximo de citas próximas por correo (0 = sin límite).
-    "ANTICIPACION_HORAS": "2",
+    // Las citas solo se reservan de mañana en adelante (regla fija). Máximo de citas próximas por correo (0 = sin límite).
     "MAX_RESERVAS_POR_EMAIL": "2",
     // Cloudflare Access (Zero Trust): team domain y Application Audience (AUD) tag de la app que protege /admin.
     "ACCESS_TEAM_DOMAIN": "titiapps.cloudflareaccess.com",

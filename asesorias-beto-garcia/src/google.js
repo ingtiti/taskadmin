@@ -68,15 +68,31 @@ export async function probarGoogle(c) {
   return `Conectado a ${c.googleCuenta || 'Google'} (calendario "${r?.summary || c.googleCalendario}").`;
 }
 
-export async function crearEventoGoogle(c, { titulo, descripcion, inicio, fin, lugar }) {
-  const ev = await api(c, 'POST', '/events', {
+/**
+ * Crea el evento en Google Calendar. Con `meet` genera la videollamada de Google Meet y devuelve su enlace.
+ * El asesorado se agrega como invitado (sin que Google le envíe correo: sendUpdates=none) para que pueda
+ * entrar a la reunión directamente, sin esperar a que lo admitan.
+ * @returns {{ id: string, enlace: string }}
+ */
+export async function crearEventoGoogle(c, { titulo, descripcion, inicio, fin, lugar, meet, invitado, solicitud }) {
+  const ev = await api(c, 'POST', `/events?sendUpdates=none${meet ? '&conferenceDataVersion=1' : ''}`, {
     summary: titulo, description: descripcion, location: lugar || undefined,
     start: { dateTime: new Date(inicio).toISOString() }, end: { dateTime: new Date(fin).toISOString() },
     reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 30 }] },
+    attendees: invitado ? [{ email: invitado.email, displayName: invitado.nombre }] : undefined,
+    guestsCanInviteOthers: false,
+    ...(meet ? { conferenceData: { createRequest: { requestId: solicitud || crypto.randomUUID(), conferenceSolutionKey: { type: 'hangoutsMeet' } } } } : {}),
   });
-  return ev.id;
+  let enlace = ev.hangoutLink || ev.conferenceData?.entryPoints?.find((p) => p.entryPointType === 'video')?.uri || '';
+  // En raras ocasiones Google crea la reunión de forma asíncrona: se consulta una vez más.
+  if (meet && !enlace && ev.conferenceData?.createRequest?.status?.statusCode === 'pending') {
+    await new Promise((r) => setTimeout(r, 1500));
+    const ev2 = await api(c, 'GET', `/events/${encodeURIComponent(ev.id)}`);
+    enlace = ev2?.hangoutLink || '';
+  }
+  return { id: ev.id, enlace };
 }
 
 export async function borrarEventoGoogle(c, id) {
-  await api(c, 'DELETE', `/events/${encodeURIComponent(id)}`);
+  await api(c, 'DELETE', `/events/${encodeURIComponent(id)}?sendUpdates=none`);
 }

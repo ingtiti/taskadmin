@@ -16,7 +16,7 @@ export async function leerConfig(env, { secretos = false } = {}) {
     emailAdmin: r.email_admin,
     graphTenant: r.graph_tenant, graphClientId: r.graph_client_id, graphBuzon: r.graph_buzon,
     graphTieneSecreto: !!r.graph_secret_cifrado,
-    exchangeCalendario: !!r.exchange_calendario, exchangeTeams: !!r.exchange_teams,
+    exchangeCalendario: !!r.exchange_calendario, reunion: r.reunion || 'meet',
     smtpHost: r.smtp_host, smtpPuerto: r.smtp_puerto, smtpSeguridad: r.smtp_seguridad, smtpUsuario: r.smtp_usuario, smtpEmail: r.smtp_email,
     smtpTienePassword: !!r.smtp_password_cifrado,
     googleActivo: !!r.google_activo, googleClientId: r.google_client_id, googleTieneSecreto: !!r.google_secret_cifrado,
@@ -71,7 +71,7 @@ export function validarConfig(b) {
     graphSecreto: txt(b.graphSecreto, 500, 'Client secret'),
     graphBuzon: correo(b.graphBuzon, 'Buzón de Exchange'),
     exchangeCalendario: !!b.exchangeCalendario,
-    exchangeTeams: !!b.exchangeTeams,
+    reunion: ['meet', 'teams', 'ninguno'].includes(b.reunion) ? b.reunion : 'meet',
     smtpHost: host(b.smtpHost, 'Servidor SMTP'),
     smtpPuerto: puerto,
     smtpSeguridad: seguridad,
@@ -89,10 +89,10 @@ export function validarConfig(b) {
 
 export async function guardarConfig(env, d, quien) {
   const sets = ['modo_correo=?', 'nombre_remitente=?', 'email_admin=?', 'graph_tenant=?', 'graph_client_id=?', 'graph_buzon=?',
-    'exchange_calendario=?', 'exchange_teams=?', 'smtp_host=?', 'smtp_puerto=?', 'smtp_seguridad=?', 'smtp_usuario=?', 'smtp_email=?',
+    'exchange_calendario=?', 'reunion=?', 'smtp_host=?', 'smtp_puerto=?', 'smtp_seguridad=?', 'smtp_usuario=?', 'smtp_email=?',
     'google_activo=?', 'google_client_id=?', 'google_calendario=?', 'lugar=?', 'mensaje_extra=?', "actualizada=datetime('now')", 'actualizada_por=?'];
   const vals = [d.modoCorreo, d.nombreRemitente, d.emailAdmin, d.graphTenant, d.graphClientId, d.graphBuzon,
-    d.exchangeCalendario ? 1 : 0, d.exchangeTeams ? 1 : 0, d.smtpHost, d.smtpPuerto, d.smtpSeguridad, d.smtpUsuario, d.smtpEmail,
+    d.exchangeCalendario ? 1 : 0, d.reunion, d.smtpHost, d.smtpPuerto, d.smtpSeguridad, d.smtpUsuario, d.smtpEmail,
     d.googleActivo ? 1 : 0, d.googleClientId, d.googleCalendario, d.lugar, d.mensajeExtra, quien];
   const nuevos = [];
   if (d.graphSecreto) { sets.push('graph_secret_cifrado=?'); vals.push(await cifrar(env, d.graphSecreto)); nuevos.push('client secret de Microsoft'); }

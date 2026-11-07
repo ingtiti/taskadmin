@@ -2,6 +2,7 @@
 import { textoFecha, textoHora } from './tiempo.js';
 
 export const NOMBRE_APP = 'Calendario de Asesorías Beto García';
+const nombreReunion = (url) => (/meet\.google\.com/.test(url) ? 'Google Meet' : /teams\.microsoft/.test(url) ? 'Microsoft Teams' : 'Reunión');
 const e = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 function marco(titulo, cuerpo, appUrl) {
@@ -26,7 +27,7 @@ ${fila('Fecha', e(fecha.charAt(0).toUpperCase() + fecha.slice(1)))}
 ${fila('Horario', `${textoHora(r.inicio, zona)} a ${textoHora(r.fin, zona)} h (${e(zona.replace('_', ' '))})`)}
 ${fila('Asesorado', e(r.nombre))}
 ${fila('Correo', e(r.email))}
-${r.enlace ? fila('Reunión', `<a href="${e(r.enlace)}" style="color:#1a56db">Unirse a la reunión</a>`) : ''}
+${r.enlace ? fila(nombreReunion(r.enlace), `<a href="${e(r.enlace)}" style="display:inline-block;background:#1a56db;color:#ffffff;text-decoration:none;padding:8px 14px;border-radius:8px">Unirse a la videollamada</a><br><span style="font-weight:400;font-size:13px;color:#5b6478">${e(r.enlace)}</span>`) : ''}
 ${c.lugar ? fila('Lugar', /^https?:\/\//.test(c.lugar) ? `<a href="${e(c.lugar)}" style="color:#1a56db">${e(c.lugar)}</a>` : e(c.lugar)) : ''}
 </table>`;
 }
@@ -44,7 +45,7 @@ export function correoAsesorado(r, c, zona, appUrl) {
   const text = textoPlano([
     `Hola ${r.nombre}, tu asesoría está confirmada.`, '',
     `Fecha: ${textoFecha(r.inicio, zona)}`, `Horario: ${textoHora(r.inicio, zona)} a ${textoHora(r.fin, zona)} h (${zona})`,
-    r.enlace ? `Reunión: ${r.enlace}` : null, c.lugar ? `Lugar: ${c.lugar}` : null, '',
+    r.enlace ? `${nombreReunion(r.enlace)}: ${r.enlace}` : null, c.lugar ? `Lugar: ${c.lugar}` : null, '',
     c.mensajeExtra || null, 'Si necesitas cambiar o cancelar la cita, responde a este correo.', '', c.nombreRemitente,
   ]);
   return { subject: `Asesoría confirmada: ${textoFecha(r.inicio, zona)}, ${textoHora(r.inicio, zona)} h`, html, text };
@@ -59,7 +60,7 @@ export function correoAdmin(r, c, zona, appUrl, avisos = []) {
   const text = textoPlano([
     `Nueva asesoría reservada por ${r.nombre} <${r.email}>.`,
     `Fecha: ${textoFecha(r.inicio, zona)}, ${textoHora(r.inicio, zona)} a ${textoHora(r.fin, zona)} h`,
-    r.enlace ? `Reunión: ${r.enlace}` : null, ...avisos,
+    r.enlace ? `${nombreReunion(r.enlace)}: ${r.enlace}` : null, ...avisos,
   ]);
   return { subject: `Nueva asesoría: ${r.nombre} · ${textoFecha(r.inicio, zona)}, ${textoHora(r.inicio, zona)} h`, html, text };
 }

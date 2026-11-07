@@ -18,7 +18,7 @@ function doblar(linea) {
   return out.join('\r\n ');
 }
 
-export function crearIcs({ uid, inicio, fin, titulo, descripcion, lugar, organizador, metodo = 'PUBLISH', cancelado = false }) {
+export function crearIcs({ uid, inicio, fin, titulo, descripcion, lugar, url, organizador, metodo = 'PUBLISH', cancelado = false }) {
   const l = [
     'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Titiapps//Calendario de Asesorias Beto Garcia//ES', 'CALSCALE:GREGORIAN', `METHOD:${metodo}`,
     'BEGIN:VEVENT',
@@ -29,6 +29,8 @@ export function crearIcs({ uid, inicio, fin, titulo, descripcion, lugar, organiz
     `SUMMARY:${esc(titulo)}`,
     `DESCRIPTION:${esc(descripcion)}`,
     lugar ? `LOCATION:${esc(lugar)}` : null,
+    url ? `URL:${url}` : null,
+    url && /meet\.google\.com/.test(url) ? `X-GOOGLE-CONFERENCE:${url}` : null,
     organizador ? `ORGANIZER;CN=${esc(organizador.nombre)}:mailto:${organizador.email}` : null,
     `STATUS:${cancelado ? 'CANCELLED' : 'CONFIRMED'}`,
     cancelado ? 'SEQUENCE:1' : 'SEQUENCE:0',

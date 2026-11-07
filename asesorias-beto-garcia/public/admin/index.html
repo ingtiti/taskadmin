@@ -34,7 +34,7 @@
       <section id="tab-espacios" role="tabpanel">
         <div class="tarjeta">
           <h2>Publicar espacios disponibles</h2>
-          <p class="sub">Cada espacio dura 1 hora. Elige el rango de fechas, los días de la semana y las horas de inicio. Los horarios que ya existan o se traslapen se omiten.</p>
+          <p class="sub">Cada espacio dura 1 hora y solo se publican de mañana en adelante (nadie puede reservar para el mismo día). Elige el rango de fechas, los días de la semana y las horas de inicio. Los horarios que ya existan o se traslapen se omiten.</p>
           <form id="form-espacios">
             <div class="dos-col">
               <div class="campo"><label for="e-desde">Desde</label><input type="date" id="e-desde" required></div>
@@ -100,6 +100,15 @@
           <div class="campo"><label for="c-mensajeExtra">Mensaje adicional en la confirmación (opcional)</label><textarea id="c-mensajeExtra" maxlength="1000" placeholder="Ej. Trae a la sesión tu modelo de negocio y tus dudas principales."></textarea></div>
 
           <div class="seccion-cfg">
+            <h3>Enlace de la sesión (videollamada)</h3>
+            <p class="sub">Se genera un enlace único por cita y se incluye en los correos, en la invitación .ics y en los eventos de calendario.</p>
+            <label class="check"><input type="radio" name="reunion" value="meet" id="c-reunion-meet"> <span><strong>Google Meet</strong> (recomendado) — requiere conectar Google Calendar más abajo.</span></label>
+            <label class="check"><input type="radio" name="reunion" value="teams" id="c-reunion-teams"> <span><strong>Microsoft Teams</strong> — requiere Microsoft Graph y el calendario de Exchange activado.</span></label>
+            <label class="check"><input type="radio" name="reunion" value="ninguno" id="c-reunion-ninguno"> <span><strong>Sin videollamada</strong> — se usa el lugar o enlace fijo de arriba.</span></label>
+            <div id="c-aviso-meet" class="aviso alerta oculto">Google Meet está elegido pero Google Calendar no está conectado: conéctalo en la sección "Google Calendar (Gmail) y Google Meet".</div>
+          </div>
+
+          <div class="seccion-cfg">
             <h3>Servidor de correo</h3>
             <p class="sub">Elige cómo se conecta la app a tu cuenta de Exchange.</p>
             <label class="check"><input type="radio" name="modoCorreo" value="graph" id="c-modo-graph"> <span><strong>Exchange Online / Microsoft 365 (Microsoft Graph)</strong> — recomendado. Envía correos y crea el evento en tu calendario de Exchange.</span></label>
@@ -116,7 +125,6 @@
               <div class="campo"><label for="c-graphBuzon">Buzón de Exchange</label><input id="c-graphBuzon" type="email" placeholder="beto.garcia@titi-apps.com"><small>Desde aquí salen los correos y en su calendario se crean las citas.</small></div>
             </div>
             <label class="check"><input type="checkbox" id="c-exchangeCalendario"> <span>Crear cada cita en mi calendario de Exchange</span></label>
-            <label class="check"><input type="checkbox" id="c-exchangeTeams"> <span>Generar reunión de Microsoft Teams y enviar el enlace al asesorado</span></label>
           </div>
 
           <div class="seccion-cfg" id="c-sec-smtp">
@@ -133,8 +141,8 @@
           </div>
 
           <div class="seccion-cfg">
-            <h3>Réplica en Google Calendar (Gmail)</h3>
-            <p class="sub">Cada cita se copia a tu calendario de Gmail. Necesitas un cliente OAuth de Google Cloud (tipo "Aplicación web") con este URI de redireccionamiento autorizado: <code id="c-retorno"></code></p>
+            <h3>Google Calendar (Gmail) y Google Meet</h3>
+            <p class="sub">Cada cita se copia a tu calendario de Gmail y desde ahí se genera el enlace de Google Meet. Necesitas un cliente OAuth de Google Cloud (tipo "Aplicación web") con este URI de redireccionamiento autorizado: <code id="c-retorno"></code></p>
             <label class="check"><input type="checkbox" id="c-googleActivo"> <span>Replicar cada cita en Google Calendar</span></label>
             <div class="dos-col">
               <div class="campo"><label for="c-googleClientId">Client ID de Google</label><input id="c-googleClientId" type="text"></div>

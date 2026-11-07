@@ -9,7 +9,7 @@ import { enviarCorreos, probarCorreo, explicar } from './correo.js';
 import { probarGraph } from './graph.js';
 import { urlAutorizacion, urlRetorno, completarConexion, probarGoogle } from './google.js';
 import { correoPrueba, NOMBRE_APP } from './plantillas.js';
-import { localAUtc } from './tiempo.js';
+import { localAUtc, inicioDeManana } from './tiempo.js';
 
 const HORA = 3600_000;
 const zona = (env) => env.ZONA_HORARIA || 'America/Mexico_City';
@@ -51,16 +51,17 @@ async function turnstile(env, token, ip) {
 
 async function apiPublica(req, env, ctx, url, ruta) {
   if (ruta === 'config' && req.method === 'GET') {
-    return json({ nombre: NOMBRE_APP, zona: zona(env), turnstile: env.TURNSTILE_SITEKEY || '', anticipacionHoras: num(env.ANTICIPACION_HORAS, 2) });
+    return json({ nombre: NOMBRE_APP, zona: zona(env), turnstile: env.TURNSTILE_SITEKEY || '' });
   }
 
   if (ruta === 'espacios' && req.method === 'GET') {
     const [ini, fin] = rango(url, env);
     const { results } = await env.DB.prepare('SELECT id, inicio, fin, estado FROM espacios WHERE inicio >= ? AND inicio < ? ORDER BY inicio')
       .bind(ini, fin).all();
-    const limite = Date.now() + num(env.ANTICIPACION_HORAS, 2) * HORA;
+    // Hoy y el pasado no se pueden reservar: solo de mañana en adelante.
+    const limite = inicioDeManana(zona(env)).getTime();
     // Solo se publica id, horario y estado: nunca datos de quien reservó.
-    return json({ espacios: results.map((e) => ({ ...e, estado: e.estado === 'disponible' && Date.parse(e.inicio) <= limite ? 'cerrado' : e.estado })) });
+    return json({ espacios: results.map((e) => ({ ...e, estado: e.estado === 'disponible' && Date.parse(e.inicio) < limite ? 'cerrado' : e.estado })) });
   }
 
   if (ruta === 'reservas' && req.method === 'POST') {
@@ -82,10 +83,10 @@ async function apiPublica(req, env, ctx, url, ruta) {
     }
 
     // Bloqueo atómico: solo un asesorado puede pasar el espacio de "disponible" a "ocupado".
-    const limite = new Date(Date.now() + num(env.ANTICIPACION_HORAS, 2) * HORA).toISOString();
-    const upd = await env.DB.prepare("UPDATE espacios SET estado = 'ocupado' WHERE id = ? AND estado = 'disponible' AND inicio > ?")
+    const limite = inicioDeManana(zona(env)).toISOString();
+    const upd = await env.DB.prepare("UPDATE espacios SET estado = 'ocupado' WHERE id = ? AND estado = 'disponible' AND inicio >= ?")
       .bind(espacioId, limite).run();
-    if (upd.meta.changes !== 1) throw new HttpError(409, 'Este horario acaba de ser ocupado o ya no está disponible. Elige otro, por favor.');
+    if (upd.meta.changes !== 1) throw new HttpError(409, 'Este horario ya fue ocupado o ya no se puede reservar (solo se aceptan citas de mañana en adelante). Elige otro, por favor.');
 
     let reserva;
     try {
@@ -134,11 +135,12 @@ async function apiAdmin(req, env, ctx, url, ruta) {
     const lista = Array.isArray(b.inicios) ? [...new Set(b.inicios.map(String))] : [];
     if (!lista.length) throw new HttpError(400, 'Elige al menos una fecha y una hora.');
     if (lista.length > 500) throw new HttpError(400, 'Máximo 500 espacios por operación.');
-    const ahora = Date.now();
+    // Como nadie puede reservar para hoy, solo se publican espacios de mañana en adelante.
+    const desde = inicioDeManana(zona(env)).getTime();
     const validos = [], invalidos = [];
     for (const l of lista) {
       const d = localAUtc(l, zona(env));
-      if (!d || d.getTime() <= ahora || d.getUTCMinutes() % 15) invalidos.push(l);
+      if (!d || d.getTime() < desde || d.getUTCMinutes() % 15) invalidos.push(l);
       else validos.push(d);
     }
     let creados = 0;

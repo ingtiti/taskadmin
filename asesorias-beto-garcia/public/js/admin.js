@@ -61,7 +61,7 @@ async function publicar(ev) {
   $('e-publicar').disabled = true;
   try {
     const r = await api('/api/admin/espacios', { method: 'POST', body: { inicios: lista } });
-    const extra = [r.repetidos ? `${r.repetidos} ya existían o se traslapaban` : '', r.invalidos ? `${r.invalidos} ya pasaron` : ''].filter(Boolean).join(' y ');
+    const extra = [r.repetidos ? `${r.repetidos} ya existían o se traslapaban` : '', r.invalidos ? `${r.invalidos} eran de hoy o ya pasaron` : ''].filter(Boolean).join(' y ');
     aviso(`Se publicaron <strong>${r.creados}</strong> espacios.${extra ? ` (${extra}, se omitieron).` : ''}`);
     const [a, m] = $('e-desde').value.split('-').map(Number);
     st.anio = a; st.mes = m - 1;
@@ -122,7 +122,7 @@ async function cargarReservas() {
       const fallas = Object.keys(err).length;
       return `<div class="lista-dia"><h4>${esc(mayus(fechaDeClave(claveDia(r.inicio, st.zona))))} · ${hora(r.inicio, st.zona)} – ${hora(r.fin, st.zona)} h</h4>
       <div class="renglon">
-        <span class="quien"><strong style="color:var(--texto)">${esc(r.nombre)}</strong><br><a href="mailto:${esc(r.email)}">${esc(r.email)}</a>${r.enlace_reunion ? ` · <a href="${esc(r.enlace_reunion)}" target="_blank" rel="noopener">Reunión de Teams</a>` : ''}</span>
+        <span class="quien"><strong style="color:var(--texto)">${esc(r.nombre)}</strong><br><a href="mailto:${esc(r.email)}">${esc(r.email)}</a>${r.enlace_reunion ? ` · <a href="${esc(r.enlace_reunion)}" target="_blank" rel="noopener">${/meet\.google\.com/.test(r.enlace_reunion) ? 'Google Meet' : /teams\.microsoft/.test(r.enlace_reunion) ? 'Microsoft Teams' : 'Videollamada'}</a>` : ''}</span>
         ${r.estado === 'confirmada' ? `<span class="estado-int">
           ${marca(r.correo_asesorado === null ? null : r.correo_asesorado === 1, 'Correo asesorado', err.correo_asesorado)}
           ${marca(r.correo_admin === null ? null : r.correo_admin === 1, 'Correo para ti', err.correo_admin)}
@@ -167,7 +167,7 @@ async function confirmarCancelar(ev) {
 
 // ── Configuración ────────────────────────────────────────
 const CAMPOS = ['nombreRemitente', 'emailAdmin', 'lugar', 'mensajeExtra', 'graphTenant', 'graphClientId', 'graphBuzon', 'smtpHost', 'smtpPuerto', 'smtpSeguridad', 'smtpUsuario', 'smtpEmail', 'googleClientId', 'googleCalendario'];
-const CHECKS = ['exchangeCalendario', 'exchangeTeams', 'googleActivo'];
+const CHECKS = ['exchangeCalendario', 'googleActivo'];
 const SECRETOS = { graphSecreto: 'graphTieneSecreto', smtpPassword: 'smtpTienePassword', googleSecreto: 'googleTieneSecreto' };
 
 function modoVisible() {
@@ -187,6 +187,8 @@ async function cargarConfig() {
       $(`c-${k}-estado`).textContent = c[tiene] ? 'Guardado. Escribe uno nuevo solo si quieres reemplazarlo.' : 'Sin capturar.';
     });
     $(c.modoCorreo === 'smtp' ? 'c-modo-smtp' : 'c-modo-graph').checked = true;
+    $(`c-reunion-${c.reunion || 'meet'}`).checked = true;
+    $('c-aviso-meet').classList.toggle('oculto', !(c.reunion === 'meet' && !c.googleConectado));
     modoVisible();
     $('c-retorno').textContent = retornoGoogle;
     $('c-google-estado').className = `etiqueta ${c.googleConectado ? 'bien' : 'na'}`;
@@ -197,7 +199,7 @@ async function cargarConfig() {
   } catch (e) { aviso(esc(e.message), 'error'); }
 }
 async function guardarConfig() {
-  const b = { modoCorreo: $('c-modo-smtp').checked ? 'smtp' : 'graph' };
+  const b = { modoCorreo: $('c-modo-smtp').checked ? 'smtp' : 'graph', reunion: document.querySelector('input[name=reunion]:checked')?.value || 'meet' };
   CAMPOS.forEach((k) => { b[k] = $(`c-${k}`).value; });
   CHECKS.forEach((k) => { b[k] = $(`c-${k}`).checked; });
   Object.keys(SECRETOS).forEach((k) => { b[k] = $(`c-${k}`).value; });
@@ -242,11 +244,14 @@ async function iniciar() {
   const hoy = hoyEn(st.zona);
   const [a, m] = hoy.split('-').map(Number);
   st.anio = a; st.mes = m - 1;
-  $('e-desde').value = hoy;
-  $('e-desde').min = hoy;
-  const fin = new Date(hoy + 'T12:00:00Z'); fin.setUTCDate(fin.getUTCDate() + 13);
+  // Las citas solo se pueden reservar de mañana en adelante, así que se publica desde mañana.
+  const man = new Date(hoy + 'T12:00:00Z'); man.setUTCDate(man.getUTCDate() + 1);
+  const manana = man.toISOString().slice(0, 10);
+  $('e-desde').value = manana;
+  $('e-desde').min = manana;
+  const fin = new Date(manana + 'T12:00:00Z'); fin.setUTCDate(fin.getUTCDate() + 13);
   $('e-hasta').value = fin.toISOString().slice(0, 10);
-  $('e-hasta').min = hoy;
+  $('e-hasta').min = manana;
   pintarSelectores();
 
   document.querySelectorAll('[role=tab]').forEach((b) => b.addEventListener('click', () => abrirTab(b.dataset.tab)));

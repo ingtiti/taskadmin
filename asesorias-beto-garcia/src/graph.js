@@ -58,7 +58,7 @@ export async function enviarGraph(c, m) {
   });
 }
 
-/** Crea el evento en el calendario de Exchange. Devuelve { id, enlace } (enlace de Teams si se pidió). */
+/** Crea el evento en el calendario de Exchange. Devuelve { id, enlace } (con enlace de Teams si se eligió Teams). */
 export async function crearEventoGraph(c, { titulo, html, inicio, fin, lugar, teams }) {
   const utc = (iso) => ({ dateTime: new Date(iso).toISOString().replace('Z', ''), timeZone: 'UTC' });
   const ev = await graph(c, 'POST', '/events', {

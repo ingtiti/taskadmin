@@ -38,3 +38,11 @@ export function textoHora(iso, zona) {
 export function textoRango(inicio, fin, zona) {
   return `${textoFecha(inicio, zona)}, de ${textoHora(inicio, zona)} a ${textoHora(fin, zona)} h`;
 }
+
+/** Inicio (00:00) del día de mañana en `zona`, como Date en UTC. Solo se puede reservar desde ese instante. */
+export function inicioDeManana(zona, ahora = new Date()) {
+  const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: zona, year: 'numeric', month: '2-digit', day: '2-digit' }).format(ahora);
+  const d = new Date(hoy + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + 1);
+  return localAUtc(`${d.toISOString().slice(0, 10)}T00:00`, zona) || new Date(ahora.getTime() + 24 * 3600_000);
+}

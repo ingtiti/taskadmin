@@ -2,10 +2,11 @@
 
 App web de **Titiapps** para reservar sesiones de asesoría personalizada de emprendimiento (1 hora cada una).
 
-- **Calendario público** (`/`): única vista pública. Muestra por mes los horarios **Disponibles** (verde) y **Ocupados** (gris). Al elegir uno se abre un formulario con la fecha y hora **fijas (no editables)** que pide nombre completo y correo.
+- **Calendario público** (`/`): única vista pública. **Solo se reserva de mañana en adelante**: el día de hoy y los pasados aparecen bloqueados (también lo valida el servidor). Muestra por mes los horarios **Disponibles** (verde) y **Ocupados** (gris). Al elegir uno se abre un formulario con la fecha y hora **fijas (no editables)** que pide nombre completo y correo.
 - **Bloqueo inmediato**: al enviar la solicitud el espacio pasa a **Ocupado** de forma atómica (dos personas no pueden tomar el mismo horario).
 - **Correos de confirmación** al asesorado y a ti, con invitación `.ics` adjunta, enviados desde tu cuenta de **Exchange**.
-- **Calendario de Exchange**: cada cita se crea en tu calendario (opcional: reunión de Teams con enlace incluido en el correo).
+- **Enlace de Google Meet**: cada cita genera su propia videollamada de Google Meet; el enlace va en el correo, en la invitación `.ics` y en los eventos de Google y Exchange (alternativa: Microsoft Teams).
+- **Calendario de Exchange**: cada cita se crea en tu calendario.
 - **Réplica en Google Calendar (Gmail)**: cada cita se copia también a tu calendario de Gmail.
 - **Panel de administración** (`/admin/`, solo tú): publicar espacios de 1 hora (por rango de fechas, días y horas), ver y cancelar reservas, reintentar envíos fallidos, configurar el servidor de correo y los calendarios, e historial de cambios.
 - Pie de página con el logo de Titiapps: "Desarrollado por Titiapps y Claude".
@@ -32,7 +33,7 @@ Rutas:
 - `/` calendario público · `/api/publico/*` API pública (solo devuelve horario y estado; nunca datos de quien reservó).
 - `/admin/` panel · `/api/admin/*` API del panel (exige el token de Cloudflare Access **y** que el correo esté en `ADMIN_EMAILS`).
 
-Reglas configurables en `wrangler.jsonc` (`vars`): zona horaria (`America/Mexico_City`), horas mínimas de anticipación para reservar (`ANTICIPACION_HORAS`, 2) y máximo de citas próximas por correo (`MAX_RESERVAS_POR_EMAIL`, 2).
+Reglas configurables en `wrangler.jsonc` (`vars`): zona horaria (`America/Mexico_City`), y máximo de citas próximas por correo (`MAX_RESERVAS_POR_EMAIL`, 2).
 
 ---
 
@@ -89,7 +90,7 @@ npm run db:migrar
 
 - `APP_URL` y `routes`: el subdominio público, por omisión `asesorias.titi-apps.com`.
 - `ADMIN_EMAILS`: tu correo (`beto.garcia@titi-apps.com`). Solo estas cuentas entran al panel.
-- `ZONA_HORARIA`, `ANTICIPACION_HORAS`, `MAX_RESERVAS_POR_EMAIL` si quieres otras reglas.
+- `ZONA_HORARIA` y `MAX_RESERVAS_POR_EMAIL` si quieres otras reglas.
 
 ## Paso 4. Crear la clave de cifrado (secreto)
 
@@ -152,11 +153,13 @@ El calendario público (`/` y `/api/publico/*`) queda abierto; todo lo de `/admi
    ```
 
    Si usas esta opción, quita los permisos `Mail.Send` y `Calendars.ReadWrite` del paso 4 en Entra (RBAC los reemplaza).
-6. En la app: **/admin/ > Correo y calendarios** > modo **Exchange Online (Microsoft Graph)**, pega Tenant ID, Client ID, Client secret y tu buzón; marca **Crear cada cita en mi calendario de Exchange** (y Teams si lo quieres). **Guardar y probar conexión** y luego **Enviarme un correo de prueba**.
+6. En la app: **/admin/ > Correo y calendarios** > modo **Exchange Online (Microsoft Graph)**, pega Tenant ID, Client ID, Client secret y tu buzón; marca **Crear cada cita en mi calendario de Exchange**. **Guardar y probar conexión** y luego **Enviarme un correo de prueba**.
 
 **¿Exchange Server local (on-premises)?** Elige el modo **Servidor SMTP**: servidor (ej. `mail.titi-apps.com`), puerto `587` + STARTTLS (o `465` + SSL), usuario, contraseña y correo remitente. Cloudflare no permite el puerto 25. En este modo la cita llega a tu calendario mediante la invitación `.ics` del correo que recibes. *Nota:* Microsoft retiró la autenticación básica de SMTP en Exchange Online, por eso para Microsoft 365 se usa Graph.
 
-## Paso 9. Replicar las citas en Google Calendar (Gmail)
+## Paso 9. Google Calendar (Gmail) y enlaces de Google Meet
+
+Este paso es **obligatorio para generar los enlaces de Google Meet**: la videollamada se crea en tu cuenta de Google junto con el evento de la cita.
 
 1. Entra a <https://console.cloud.google.com>, crea un proyecto (`asesorias-beto-garcia`).
 2. **APIs & Services > Library** > habilita **Google Calendar API**.
@@ -164,7 +167,8 @@ El calendario público (`/` y `/api/publico/*`) queda abierto; todo lo de `/admi
 4. **Importante:** en *Audience / Publishing status* pulsa **Publish app** (*In production*). En modo *Testing* Google vence el acceso cada 7 días. Como es solo para tu uso, no necesitas verificación; al conectar verás un aviso de "app no verificada": elige *Avanzado > Ir a…*.
 5. **Clients > Create client > Web application**. En **Authorized redirect URIs** agrega exactamente el URI que muestra la app en **Correo y calendarios** (por omisión `https://asesorias.titi-apps.com/api/admin/google/callback`). Copia Client ID y Client secret.
 6. En la app: pega Client ID y Client secret, marca **Replicar cada cita en Google Calendar**, **Guardar**, y luego **Conectar con Google** e inicia sesión con tu Gmail. Debe aparecer "Conectado: tu-correo@gmail.com".
-7. *(Opcional)* Para usar un calendario distinto al principal, pon su ID (Google Calendar > Configuración del calendario > *ID del calendario*).
+7. En **Enlace de la sesión** deja elegido **Google Meet** (viene así por omisión) y guarda. El asesorado se agrega como invitado del evento (sin que Google le mande otro correo) para que entre directo a la videollamada sin esperar a que lo admitas.
+8. *(Opcional)* Para usar un calendario distinto al principal, pon su ID (Google Calendar > Configuración del calendario > *ID del calendario*).
 
 ## Paso 10. Logo de Titiapps
 
@@ -178,9 +182,9 @@ El pie de página usa `public/img/titiapps-logo.svg` (incluye un logo provisiona
 
 ## Paso 12. Uso diario
 
-1. **/admin/ > Espacios**: elige rango de fechas, días y horas de inicio y pulsa **Publicar espacios**. Cada espacio dura 1 hora; los repetidos o traslapados se omiten. Puedes eliminar los que sigan disponibles.
+1. **/admin/ > Espacios**: elige (desde mañana) rango de fechas, días y horas de inicio y pulsa **Publicar espacios**. Cada espacio dura 1 hora; los repetidos o traslapados se omiten. Puedes eliminar los que sigan disponibles.
 2. Comparte `https://asesorias.titi-apps.com` con tus asesorados.
-3. **Reservas**: verás cada cita con el estado de *Correo asesorado*, *Correo para ti*, *Exchange* y *Google*. Si algo falló, pulsa **Reintentar** (además, cada 10 minutos se procesan solas las que quedaron pendientes). **Cancelar** borra los eventos de Exchange y Google, puede liberar el horario y avisar al asesorado.
+3. **Reservas**: verás cada cita con el estado de *Correo asesorado*, *Correo para ti*, *Exchange* y *Google*. Si algo falló, pulsa **Reintentar** (además, cada 10 minutos se procesan solas las que quedaron pendientes). Si Google Meet falla, la confirmación al asesorado espera el reintento automático para llegar con el enlace; después de 30 minutos se envía de todos modos y a ti te llega el aviso. **Cancelar** borra los eventos de Exchange y Google, puede liberar el horario y avisar al asesorado.
 
 ---
 

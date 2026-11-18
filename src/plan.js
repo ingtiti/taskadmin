@@ -1,7 +1,8 @@
 // Plan de trabajo de la propuesta (6 meses). Cada fila: [actividad, día de inicio, día compromiso, perfiles, prioridad],
 // con los días contados desde la fecha de arranque de la empresa.
 
-const PM = 'Project manager', CM = 'Community manager', DG = 'Diseñador gráfico', TM = 'Telemarketer', AD = 'Analista de datos';
+// Claves de perfil (columna perfiles.clave): siguen funcionando aunque el perfil cambie de nombre en el módulo Perfiles.
+const PM = 'pm', CM = 'cm', DG = 'dg', TM = 'tm', AD = 'ad';
 
 export function planBase() {
   const L = [
@@ -31,9 +32,10 @@ export function planBase() {
   return L;
 }
 
-/** Personas activas de la empresa con alguno de esos perfiles; si no hay, los líderes globales. */
-export function asignar(personal, perfiles, empresaId) {
+/** Personas activas de la empresa con alguno de esos perfiles (por clave); si no hay, los líderes globales. */
+export function asignar(personal, claves, empresaId, perfiles) {
+  const nombres = perfiles.filter((pf) => claves.includes(pf.clave)).map((pf) => pf.nombre);
   const act = personal.filter((p) => p.activo && (!p.empresas.length || p.empresas.includes(empresaId)));
-  const r = act.filter((p) => perfiles.includes(p.perfil)).map((p) => p.id);
+  const r = act.filter((p) => nombres.includes(p.perfil)).map((p) => p.id);
   return r.length ? r : act.filter((p) => p.lider).map((p) => p.id);
 }

@@ -4,7 +4,8 @@ App de TiTi-Apps para el servicio de generación y calificación de contactos en
 
 - **Semáforo:** vencidas, vencen en 1 día, vencen en 3 días, en tiempo y completadas, por empresa y por persona.
 - **Actividades:** cada una con empresa, uno o varios responsables, fecha de inicio, fecha compromiso, prioridad y estado.
-- **Personal:** perfiles Admin, Project manager, Community manager, Diseñador gráfico, Telemarketer y Analista de datos; líderes globales; empresas asignadas.
+- **Personal:** cada persona con su perfil, líderes globales y empresas asignadas.
+- **Perfiles** (solo líderes globales): crear, renombrar y eliminar los perfiles del personal. Vienen Admin, Project manager, Community manager, Diseñador gráfico, Telemarketer y Analista de datos.
 - **Empresas:** fecha de arranque y botón para cargar el plan de trabajo de 6 meses (44 actividades asignadas por perfil).
 - **Archivos por empresa:** botón **Archivos** en cada empresa para subir cualquier cantidad de archivos (hasta 100 MB cada uno), cada uno con una descripción de hasta 150 caracteres.
 - **Orden del día:** correo automático a las 8:00 (lunes a viernes, hora de Ciudad de México) a cada persona con sus actividades abiertas.
@@ -17,6 +18,16 @@ App de TiTi-Apps para el servicio de generación y calificación de contactos en
 - La contraseña se guarda cifrada (AES-GCM) con el secreto `CLAVE_CORREO` y nunca se devuelve al navegador.
 - Ya no hace falta verificar `titi-apps.com` en Email Service ni agregar sus registros DNS.
 - Si ya publicaste la versión 1: haz push de esta versión (la migración `0003_cuenta_correo.sql` se aplica sola), crea el secreto `CLAVE_CORREO` (paso 3) y configura la cuenta en **Correo**.
+
+## Perfiles (versión 2.2)
+
+- Módulo **Perfiles**, visible solo para líderes globales: lista cada perfil con cuántas personas lo tienen.
+- **Crear:** botón **Nuevo perfil** (hasta 60 caracteres; no se repiten nombres, sin importar mayúsculas).
+- **Renombrar:** **Editar** cambia el nombre en el perfil y en todas las personas que lo tienen, en una sola operación.
+- **Eliminar:** solo si ninguna persona lo tiene; si no, la app pide cambiarlas de perfil primero.
+- Los cinco perfiles del plan de trabajo (Project manager, Community manager, Diseñador gráfico, Telemarketer y Analista de datos) conservan sus actividades del plan aunque cambien de nombre (columna **Plan de trabajo**). Si se elimina uno, sus actividades del plan se asignan a los líderes globales. Los perfiles nuevos no reciben actividades del plan.
+- Cada cambio queda en `historial`.
+- La migración `0005_perfiles.sql` crea la tabla `perfiles` y quita la lista fija de perfiles de la tabla `personal` (la reconstruye conservando personas, empresas asignadas y responsables). No requiere configuración adicional en Cloudflare: se aplica sola con el deploy. Antes del merge conviene un respaldo: `npx wrangler d1 export control-campanas --remote --output respaldo.sql` (D1 también permite volver a cualquier punto de los últimos 30 días con Time Travel).
 
 ## Archivos por empresa (versión 2.1)
 
@@ -119,6 +130,7 @@ Pega el valor cuando lo pida. Guárdalo también en tu gestor de contraseñas: s
 2. En la configuración de build:
    - **Build command:** déjalo vacío.
    - **Deploy command:** `npx wrangler d1 migrations apply control-campanas --remote && npx wrangler deploy`
+   - En la pestaña **Previews Base**, apaga **Builds for Preview branches**. Esos builds (los de ramas que no son `main`, como las de los Pull Requests) ejecutan `npx wrangler preview`, que falla porque pide un bloque `previews` en `wrangler.jsonc` con base de datos y bucket propios, y Cloudflare no respeta el campo *Preview command*. El deploy de `main` no se ve afectado.
 3. Guarda. Desde ahora, cada `git push` a `main` publica una versión nueva y aplica las migraciones pendientes de la base de datos.
 
 Si el build marca un error de permisos al aplicar migraciones, deja el deploy command en `npx wrangler deploy` y aplica las migraciones a mano con `npm run db:migrar` cuando agregues una nueva.
@@ -184,7 +196,7 @@ En `.dev.vars` pon una `CLAVE_CORREO` propia (`openssl rand -base64 32`). Abre `
 
 - Trabaja cada cambio en una rama (`git checkout -b ajuste-semaforo`) y abre un Pull Request a `main`; al hacer merge se publica solo.
 - Cambios a la base de datos: crea un archivo nuevo en `migrations/` (`npx wrangler d1 migrations create control-campanas descripcion`). No edites migraciones ya aplicadas.
-- Para regresar a una versión anterior: Cloudflare > Workers > control-campanas > **Deployments > Rollback**, o `git revert` y push.
+- Para regresar a una versión anterior: Cloudflare > Workers & Pages > taskadmin > **Deployments > Rollback**, o `git revert` y push.
 - Respaldo de datos: `npx wrangler d1 export control-campanas --remote --output respaldo.sql`. D1 también permite restaurar a cualquier punto de los últimos 30 días (Time Travel).
 - Los archivos en R2 no entran en ese respaldo ni en Time Travel: un archivo eliminado desde la app no se puede recuperar.
 
@@ -195,6 +207,7 @@ En `.dev.vars` pon una `CLAVE_CORREO` propia (`openssl rand -base64 32`). Abre `
 | Hora o días del correo | `triggers.crons` en `wrangler.jsonc` (está en UTC: 14:00 UTC = 8:00 CDMX) |
 | Cuenta, remitente o contraseña del correo | Módulo **Correo** dentro de la app |
 | Umbrales del semáforo | función `sem()` en `public/js/logica.js` |
-| Actividades del plan de 6 meses | `planBase()` en `src/plan.js` (y `N_PLAN` en `public/index.html`) |
+| Actividades del plan de 6 meses | `planBase()` en `src/plan.js` (y `N_PLAN` en `public/index.html`); los perfiles van por clave (`pm`, `cm`, `dg`, `tm`, `ad`) |
+| Nombres de los perfiles | Módulo **Perfiles** dentro de la app |
 | Subdominio | `routes` y `APP_URL` en `wrangler.jsonc`, y la aplicación de Access |
 | Tamaño máximo o largo de descripción de archivos | `MAX_ARCHIVO` / `MAX_DESC_ARCHIVO` en `src/index.js` y `MAX_ARCHIVO_MB` / `MAX_DESC_ARCHIVO` en `public/index.html` |

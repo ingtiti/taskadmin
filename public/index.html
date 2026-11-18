@@ -188,6 +188,7 @@ progress{width:100%;height:8px}
       <a href="#personal" data-tab="personal">Personal</a>
       <a href="#empresas" data-tab="empresas">Empresas</a>
       <a href="#orden" data-tab="orden">Orden del día</a>
+      <a href="#perfiles" data-tab="perfiles" id="tab-perfiles" hidden>Perfiles</a>
       <a href="#correo" data-tab="correo" id="tab-correo" hidden>Correo</a>
     </nav>
     <div class="yo" id="yo"></div>
@@ -202,13 +203,13 @@ progress{width:100%;height:8px}
 <div id="toast" hidden role="status"></div>
 
 <script type="module">
-import { PERFILES, ESTADOS, PRIORIDADES, SEM, SEM_ORDER, esc, hoyCDMX, addDays, habil, fmt, fmtLargo, sem as semH, rel as relH, byFecha } from './js/logica.js';
+import { ESTADOS, PRIORIDADES, SEM, SEM_ORDER, esc, hoyCDMX, addDays, habil, fmt, fmtLargo, sem as semH, rel as relH, byFecha } from './js/logica.js';
 
-const st = { empresas: [], personal: [], tareas: [], envio: null, yo: null, hoy: hoyCDMX(), status: 'loading', error: '' };
+const st = { empresas: [], personal: [], tareas: [], perfiles: [], envio: null, yo: null, hoy: hoyCDMX(), status: 'loading', error: '' };
 const ui = { tab: 'tablero', fEmp: '', fPer: '', fEst: 'abiertas', fSem: '', ordenPer: '' };
 try { const s = JSON.parse(localStorage.getItem('ccl-ui') || '{}'); ui.fEmp = s.fEmp || ''; ui.fPer = s.fPer || ''; } catch (e) {}
 const saveUi = () => { try { localStorage.setItem('ccl-ui', JSON.stringify({ fEmp: ui.fEmp, fPer: ui.fPer })); } catch (e) {} };
-const TABS = ['tablero', 'actividades', 'personal', 'empresas', 'orden', 'correo'];
+const TABS = ['tablero', 'actividades', 'personal', 'empresas', 'perfiles', 'orden', 'correo'];
 if (TABS.includes(location.hash.slice(1))) ui.tab = location.hash.slice(1);
 
 const $ = (s) => document.querySelector(s);
@@ -264,8 +265,9 @@ function render() {
   if (st.status === 'loading') return;
   const aviso = st.yo && !st.yo.registrado ? `<div class="banner">Tu correo ${esc(st.yo.email)} no está dado de alta en el personal, así que solo puedes consultar. Pide a un líder global que te registre.</div>` : '';
   $('#tab-correo').hidden = !esLider();
-  if (ui.tab === 'correo' && !esLider()) ui.tab = 'tablero';
-  m.innerHTML = aviso + { tablero: vTablero, actividades: vActividades, personal: vPersonal, empresas: vEmpresas, orden: vOrden, correo: vCorreo }[ui.tab]();
+  $('#tab-perfiles').hidden = !esLider();
+  if ((ui.tab === 'correo' || ui.tab === 'perfiles') && !esLider()) ui.tab = 'tablero';
+  m.innerHTML = aviso + { tablero: vTablero, actividades: vActividades, personal: vPersonal, empresas: vEmpresas, perfiles: vPerfiles, orden: vOrden, correo: vCorreo }[ui.tab]();
   if (ui.tab === 'orden') cargarVistaPrevia();
   if (ui.tab === 'correo') cargarCuenta();
 }
@@ -346,10 +348,25 @@ function vPersonal() {
     <td>${countsHtml(c)}</td>
     <td>${esLider() ? `<button class="btn small" data-act="edit-p" data-id="${p.id}">Editar</button>` : ''}</td></tr>`;
   }).join('');
-  const perfiles = PERFILES.map((pf) => `<span class="chip">${pf}: <b>${ps.filter((p) => p.perfil === pf && p.activo).length}</b></span>`).join('');
+  const perfiles = st.perfiles.map((pf) => `<span class="chip">${esc(pf.nombre)}: <b>${ps.filter((p) => p.perfil === pf.nombre && p.activo).length}</b></span>`).join('');
   return `<div class="head"><div><h1>Personal</h1><p class="sub">El correo de cada persona recibe la orden del día a las 8:00 y es con el que entra a la app.</p></div>${esLider() ? '<button class="btn primary" data-act="new-p">Dar de alta</button>' : ''}</div>
   <div class="t-meta">${perfiles}</div>
   <section class="panel">${ps.length ? `<div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>Perfil</th><th>Correo</th><th>Empresas</th><th>Pendientes</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty"><b>Sin personal registrado</b>Da de alta a los líderes globales y al equipo de cada campaña.</div>'}</section>`;
+}
+
+/* ---------- perfiles ---------- */
+const PLAN_ROL = { pm: 'Project manager', cm: 'Community manager', dg: 'Diseñador gráfico', tm: 'Telemarketer', ad: 'Analista de datos' };
+const usanPerfil = (nombre) => st.personal.filter((p) => p.perfil === nombre);
+function vPerfiles() {
+  const rows = st.perfiles.map((pf) => {
+    const ps = usanPerfil(pf.nombre), act = ps.filter((p) => p.activo).length;
+    return `<tr><td><b>${esc(pf.nombre)}</b></td>
+    <td class="num">${ps.length}${ps.length !== act ? ` <span class="muted">(${act} activas)</span>` : ''}</td>
+    <td>${pf.clave ? `<span class="badge">${esc(PLAN_ROL[pf.clave] || pf.clave)}</span>` : '<span class="muted">No</span>'}</td>
+    <td><button class="btn small" data-act="edit-pf" data-id="${pf.id}">Editar</button></td></tr>`;
+  }).join('');
+  return `<div class="head"><div><h1>Perfiles</h1><p class="sub">Los perfiles que se asignan a cada persona en Personal. Al cambiar el nombre de un perfil, se actualiza en todas las personas que lo tienen. «Plan de trabajo» indica qué actividades del plan de 6 meses recibe.</p></div><button class="btn primary" data-act="new-pf">Nuevo perfil</button></div>
+  <section class="panel">${st.perfiles.length ? `<div class="tbl-wrap"><table><thead><tr><th>Perfil</th><th>Personas</th><th>Plan de trabajo</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty"><b>Sin perfiles</b>Crea el primero para poder dar de alta al personal.</div>'}</section>`;
 }
 
 function vEmpresas() {
@@ -515,11 +532,15 @@ function formTarea(id) {
     <div class="foot">${id && esLider() ? `<button class="btn danger" type="button" data-act="del" data-col="tareas" data-id="${id}">Eliminar</button>` : '<span></span>'}<button class="btn primary" type="submit">${id ? 'Guardar cambios' : 'Crear actividad'}</button></div></form>`);
 }
 function formPersona(id) {
-  const p = id ? perById[id] : { perfil: 'Community manager', activo: true, empresas: [] };
+  if (!id && !st.perfiles.length) { toast('Primero crea un perfil en Perfiles'); return; }
+  const defecto = (st.perfiles.find((pf) => pf.clave === 'cm') || st.perfiles[0] || {}).nombre;
+  const p = id ? perById[id] : { perfil: defecto, activo: true, empresas: [] };
+  const opciones = st.perfiles.map((pf) => pf.nombre);
+  if (p.perfil && !opciones.includes(p.perfil)) opciones.unshift(p.perfil);
   openSheet(shHead(id ? 'Editar persona' : 'Dar de alta personal') + `<form id="frm" data-kind="p" data-id="${id || ''}">
     <div class="f2"><label class="f"><span>Nombre</span><input type="text" id="p-nombre" required maxlength="120" value="${esc(p.nombre)}"></label>
     <label class="f"><span>Correo electrónico</span><input type="email" id="p-email" maxlength="160" value="${esc(p.email || '')}" placeholder="nombre@titi-apps.com"></label></div>
-    <div class="f2"><label class="f"><span>Perfil</span><select id="p-perfil">${PERFILES.map((x) => `<option ${p.perfil === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+    <div class="f2"><label class="f"><span>Perfil</span><select id="p-perfil">${opciones.map((x) => `<option value="${esc(x)}" ${p.perfil === x ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></label>
     <div class="f"><span>Opciones</span><label class="inline"><input type="checkbox" id="p-lider" ${p.lider ? 'checked' : ''}> Líder global</label><label class="inline"><input type="checkbox" id="p-activo" ${p.activo ? 'checked' : ''}> Activo</label></div></div>
     <div class="f"><span>Empresas asignadas (vacío = todas)</span><div class="checks">${st.empresas.map((e) => `<label><input type="checkbox" name="emp" value="${e.id}" ${p.empresas.includes(e.id) ? 'checked' : ''}><span>${esc(e.nombre)}</span></label>`).join('') || '<span class="muted">Sin empresas registradas.</span>'}</div></div>
     <p class="muted" style="margin:0;font-size:12.5px">Para que pueda entrar, su correo también debe estar en la política de Cloudflare Access.</p>
@@ -604,12 +625,24 @@ async function enviarArchivo(f) {
   btn.disabled = false; btn.textContent = 'Agregar archivo'; prog.hidden = true;
 }
 
+function formPerfil(id) {
+  const pf = id ? st.perfiles.find((x) => x.id === id) : {};
+  if (!pf) return;
+  const ps = id ? usanPerfil(pf.nombre) : [];
+  openSheet(shHead(id ? 'Editar perfil' : 'Nuevo perfil') + `<form id="frm" data-kind="pf" data-id="${id || ''}">
+    <label class="f"><span>Nombre del perfil</span><input type="text" id="pf-nombre" required maxlength="60" value="${esc(pf.nombre || '')}" placeholder="Ej. Copywriter"></label>
+    ${id && ps.length ? `<p class="muted" style="margin:0;font-size:12.5px">Lo tienen ${ps.length === 1 ? '1 persona' : ps.length + ' personas'}: ${ps.map((p) => esc(p.nombre)).join(', ')}. El nuevo nombre se aplica a todas.</p>` : ''}
+    ${pf.clave ? `<p class="muted" style="margin:0;font-size:12.5px">Este perfil recibe las actividades de <b>${esc(PLAN_ROL[pf.clave] || pf.clave)}</b> del plan de trabajo, aunque cambies su nombre.${ps.length ? '' : ' Si lo eliminas, esas actividades se asignarán a los líderes globales.'}</p>` : ''}
+    <p class="err" id="frm-err" hidden></p>
+    <div class="foot">${id ? (ps.length ? '<span class="muted" style="font-size:12.5px;align-self:center">Para eliminarlo, cambia antes de perfil a esas personas.</span>' : `<button class="btn danger" type="button" data-act="del" data-col="perfiles" data-id="${id}">Eliminar</button>`) : '<span></span>'}<button class="btn primary" type="submit">${id ? 'Guardar cambios' : 'Crear perfil'}</button></div></form>`);
+}
+
 const N_PLAN = 44;
 function formPlan(id) {
   const e = empById[id]; if (!e) return;
   const ex = st.tareas.filter((t) => t.empresaId === id).length;
-  const perfiles = ['Project manager', 'Community manager', 'Diseñador gráfico', 'Telemarketer', 'Analista de datos'];
-  const sinPerfil = perfiles.filter((pf) => !st.personal.some((p) => p.activo && p.perfil === pf && (!p.empresas.length || p.empresas.includes(id))));
+  const sinPerfil = Object.keys(PLAN_ROL).map((k) => st.perfiles.find((pf) => pf.clave === k) || { nombre: PLAN_ROL[k] + ' (perfil eliminado)' })
+    .filter((pf) => !st.personal.some((p) => p.activo && p.perfil === pf.nombre && (!p.empresas.length || p.empresas.includes(id)))).map((pf) => esc(pf.nombre));
   openSheet(shHead('Cargar plan de trabajo · ' + esc(e.nombre)) + `<div class="sb">
     ${e.inicio ? `<p style="margin:0">Se crearán <b>${N_PLAN} actividades</b> para ${esc(e.nombre)} entre el ${fmtLargo(e.inicio)} y el ${fmtLargo(habil(addDays(e.inicio, 182)))}: kickoff, perfil de LinkedIn, aprobador, contenido del mes 1 en 2 semanas y el ciclo mensual de contenido, captura, calificación y reporte durante 6 meses.</p>
     <p class="muted" style="margin:0">Los responsables se asignan por perfil entre el personal de esta empresa. Las fechas que caen en fin de semana se mueven al viernes.</p>
@@ -642,6 +675,8 @@ document.addEventListener('click', async (ev) => {
     else if (a === 'edit-e') formEmpresa(id);
     else if (a === 'plan') formPlan(id);
     else if (a === 'archivos') formArchivos(id);
+    else if (a === 'new-pf') formPerfil();
+    else if (a === 'edit-pf') formPerfil(id);
     else if (a === 'del-archivo') {
       if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'Confirmar'; return; }
       b.disabled = true;
@@ -692,6 +727,11 @@ document.addEventListener('submit', async (ev) => {
     if (!resp.length) return showErr('Asigna al menos un responsable.');
     if (data.inicio && data.inicio > data.fecha) return showErr('La fecha de inicio no puede ser posterior a la fecha compromiso.');
     path = '/api/tareas';
+  } else if (k === 'pf') {
+    data = { nombre: $('#pf-nombre').value.replace(/\s+/g, ' ').trim() };
+    if (!data.nombre) return showErr('Escribe el nombre del perfil.');
+    if (st.perfiles.some((x) => x.id !== id && x.nombre.toLowerCase() === data.nombre.toLowerCase())) return showErr('Ya existe un perfil con ese nombre.');
+    path = '/api/perfiles';
   } else if (k === 'p') {
     data = { nombre: $('#p-nombre').value.trim(), email: $('#p-email').value.trim(), perfil: $('#p-perfil').value, lider: $('#p-lider').checked, activo: $('#p-activo').checked, empresas: [...f.querySelectorAll('input[name=emp]:checked')].map((i) => i.value) };
     if (!data.nombre) return showErr('Escribe el nombre.');

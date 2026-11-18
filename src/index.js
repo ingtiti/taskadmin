@@ -6,7 +6,7 @@ import * as datos from './datos.js';
 import { planBase, asignar } from './plan.js';
 import { correoOrden, enviarOrdenes } from './orden.js';
 import { leerCuenta, guardarCuenta, probarCuenta, cuentaCompleta, SEGURIDAD } from './correo.js';
-import { PERFILES, ESTADOS, PRIORIDADES, hoyCDMX, addDays, habil } from '../public/js/logica.js';
+import { ESTADOS, PRIORIDADES, hoyCDMX, addDays, habil } from '../public/js/logica.js';
 
 const json = (d, status = 200) =>
   new Response(JSON.stringify(d), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
@@ -33,7 +33,18 @@ function valEmpresa(b) {
 function valPersona(b) {
   const email = txt(b.email, 160, 'Correo').toLowerCase();
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new HttpError(400, 'El correo no parece válido.');
-  return { nombre: txt(b.nombre, 120, 'el nombre', true), email, perfil: uno(b.perfil, PERFILES, 'Perfil'), lider: !!b.lider, activo: b.activo !== false, empresas: ids(b.empresas) };
+  return { nombre: txt(b.nombre, 120, 'el nombre', true), email, perfil: txt(b.perfil, 60, 'el perfil', true), lider: !!b.lider, activo: b.activo !== false, empresas: ids(b.empresas) };
+}
+async function valPersonaCompleta(env, b) {
+  const d = valPersona(b);
+  if (!(await datos.existePerfil(env, d.perfil))) throw new HttpError(400, 'El perfil no existe. Elige uno de la lista.');
+  return d;
+}
+function valPerfil(b) {
+  const nombre = String(b.nombre ?? '').replace(/\s+/g, ' ').trim();
+  if (!nombre) throw new HttpError(400, 'Escribe el nombre del perfil.');
+  if (nombre.length > 60) throw new HttpError(400, 'El nombre del perfil admite hasta 60 caracteres.');
+  return nombre;
 }
 async function valTarea(env, b) {
   const d = {
@@ -152,7 +163,7 @@ async function api(req, env, url) {
     if (!e) throw new HttpError(404, 'La empresa no existe.');
     if (!e.inicio) throw new HttpError(400, 'Registra primero la fecha de arranque de la empresa.');
     const lista = planBase().map(([titulo, si, fi, perfiles, prioridad]) => ({
-      titulo, prioridad, inicio: habil(addDays(e.inicio, si)), fecha: habil(addDays(e.inicio, fi)), responsables: asignar(est.personal, perfiles, e.id),
+      titulo, prioridad, inicio: habil(addDays(e.inicio, si)), fecha: habil(addDays(e.inicio, fi)), responsables: asignar(est.personal, perfiles, e.id, est.perfiles),
     }));
     await datos.crearPlan(env, e.id, lista, email);
     return json({ creadas: lista.length }, 201);
@@ -202,16 +213,29 @@ async function api(req, env, url) {
     }
   }
 
+  // Perfiles (solo líderes)
+  if (m === 'POST' && p === '/api/perfiles') {
+    lider(yo);
+    const id = crypto.randomUUID();
+    await datos.crearPerfil(env, id, valPerfil(await body(req)), email);
+    return json({ id }, 201);
+  }
+  if ((r = p.match(/^\/api\/perfiles\/([\w-]+)$/))) {
+    lider(yo);
+    if (m === 'PUT') { await datos.renombrarPerfil(env, r[1], valPerfil(await body(req)), email); return json({ ok: true }); }
+    if (m === 'DELETE') { await datos.borrarPerfil(env, r[1], email); return json({ ok: true }); }
+  }
+
   // Personal
   if (m === 'POST' && p === '/api/personal') {
     lider(yo);
     const id = crypto.randomUUID();
-    await datos.guardarPersona(env, id, valPersona(await body(req)), email, true);
+    await datos.guardarPersona(env, id, await valPersonaCompleta(env, await body(req)), email, true);
     return json({ id }, 201);
   }
   if ((r = p.match(/^\/api\/personal\/([\w-]+)$/))) {
     lider(yo);
-    if (m === 'PUT') { await datos.guardarPersona(env, r[1], valPersona(await body(req)), email, false); return json({ ok: true }); }
+    if (m === 'PUT') { await datos.guardarPersona(env, r[1], await valPersonaCompleta(env, await body(req)), email, false); return json({ ok: true }); }
     if (m === 'DELETE') { await datos.borrarPersona(env, r[1], email); return json({ ok: true }); }
   }
 

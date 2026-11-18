@@ -1,7 +1,6 @@
 // Lógica compartida entre el navegador y el Worker: fechas, semáforo y orden del día.
 // El Worker la importa al compilar (esbuild), así ambos calculan exactamente lo mismo.
 
-export const PERFILES = ['Admin', 'Project manager', 'Community manager', 'Diseñador gráfico', 'Telemarketer', 'Analista de datos'];
 export const ESTADOS = ['Pendiente', 'En proceso', 'Completada'];
 export const PRIORIDADES = ['Alta', 'Media', 'Baja'];
 

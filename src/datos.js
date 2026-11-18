@@ -14,8 +14,9 @@ export async function cargarEstado(env) {
     env.DB.prepare('SELECT tarea_id, persona_id FROM tarea_responsables'),
     env.DB.prepare('SELECT fecha, hora, origen, enviados, fallidos, nota FROM envios ORDER BY id DESC LIMIT 1'),
     env.DB.prepare('SELECT empresa_id, COUNT(*) AS n FROM empresa_archivos GROUP BY empresa_id'),
+    env.DB.prepare('SELECT id, nombre, clave FROM perfiles ORDER BY nombre COLLATE NOCASE'),
   ]);
-  const [E, P, PE, T, TR, EN, EA] = r.map((x) => x.results);
+  const [E, P, PE, T, TR, EN, EA, PF] = r.map((x) => x.results);
   const archivosDe = Object.fromEntries(EA.map((x) => [x.empresa_id, x.n]));
   const empsDe = {}, respDe = {};
   for (const x of PE) (empsDe[x.persona_id] ||= []).push(x.empresa_id);
@@ -28,6 +29,7 @@ export async function cargarEstado(env) {
       estado: t.estado, descripcion: t.descripcion, origen: t.origen, completadaEn: t.completada_en, responsables: respDe[t.id] || [],
     })),
     envio: EN[0] || null,
+    perfiles: PF,
   };
 }
 
@@ -106,6 +108,50 @@ export async function borrarArchivo(env, a, quien) {
     hist(env, quien, 'eliminar archivo', 'empresa', a.empresaId, { archivo: a.id, nombre: a.nombre }),
   ]);
   if (!r.meta.changes) throw new HttpError(404, 'El archivo ya no existe.');
+}
+
+/* ---------- perfiles ---------- */
+export async function existePerfil(env, nombre) {
+  return !!(await env.DB.prepare('SELECT 1 FROM perfiles WHERE nombre = ?').bind(nombre).first());
+}
+
+async function correrPerfil(env, stmts) {
+  try {
+    return await env.DB.batch(stmts);
+  } catch (e) {
+    if (/UNIQUE/i.test(String(e.message))) throw new HttpError(409, 'Ya existe un perfil con ese nombre.');
+    throw e;
+  }
+}
+
+export async function crearPerfil(env, id, nombre, quien) {
+  await correrPerfil(env, [
+    env.DB.prepare('INSERT INTO perfiles (id, nombre) VALUES (?,?)').bind(id, nombre),
+    hist(env, quien, 'crear', 'perfil', id, nombre),
+  ]);
+}
+
+/** Cambia el nombre del perfil y de todas las personas que lo tienen, en una sola transacción. */
+export async function renombrarPerfil(env, id, nombre, quien) {
+  const actual = await env.DB.prepare('SELECT nombre FROM perfiles WHERE id = ?').bind(id).first();
+  if (!actual) throw new HttpError(404, 'El perfil ya no existe.');
+  if (actual.nombre === nombre) return;
+  await correrPerfil(env, [
+    env.DB.prepare("UPDATE perfiles SET nombre=?, actualizado=datetime('now') WHERE id=?").bind(nombre, id),
+    env.DB.prepare("UPDATE personal SET perfil=?, actualizada=datetime('now') WHERE perfil=?").bind(nombre, actual.nombre),
+    hist(env, quien, 'editar', 'perfil', id, { antes: actual.nombre, ahora: nombre }),
+  ]);
+}
+
+export async function borrarPerfil(env, id, quien) {
+  const actual = await env.DB.prepare('SELECT nombre FROM perfiles WHERE id = ?').bind(id).first();
+  if (!actual) throw new HttpError(404, 'El perfil ya no existe.');
+  const { n } = await env.DB.prepare('SELECT COUNT(*) AS n FROM personal WHERE perfil = ?').bind(actual.nombre).first();
+  if (n) throw new HttpError(409, `No se puede eliminar: ${n === 1 ? '1 persona tiene' : `${n} personas tienen`} el perfil ${actual.nombre}. ${n === 1 ? 'Cámbiala' : 'Cámbialas'} de perfil primero.`);
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM perfiles WHERE id = ?').bind(id),
+    hist(env, quien, 'eliminar', 'perfil', id, actual.nombre),
+  ]);
 }
 
 /* ---------- personal ---------- */

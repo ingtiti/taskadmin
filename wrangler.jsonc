@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "control-campanas",
+  // Debe coincidir con el nombre del Worker en Cloudflare (Workers & Pages).
+  "name": "taskadmin",
   "main": "src/index.js",
   "compatibility_date": "2026-06-01",
   // nodejs_compat lo requiere worker-mailer (cliente SMTP sobre sockets TCP).

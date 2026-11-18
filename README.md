@@ -195,7 +195,7 @@ En `.dev.vars` pon una `CLAVE_CORREO` propia (`openssl rand -base64 32`). Abre `
 
 - Trabaja cada cambio en una rama (`git checkout -b ajuste-semaforo`) y abre un Pull Request a `main`; al hacer merge se publica solo.
 - Cambios a la base de datos: crea un archivo nuevo en `migrations/` (`npx wrangler d1 migrations create control-campanas descripcion`). No edites migraciones ya aplicadas.
-- Para regresar a una versión anterior: Cloudflare > Workers > control-campanas > **Deployments > Rollback**, o `git revert` y push.
+- Para regresar a una versión anterior: Cloudflare > Workers & Pages > taskadmin > **Deployments > Rollback**, o `git revert` y push.
 - Respaldo de datos: `npx wrangler d1 export control-campanas --remote --output respaldo.sql`. D1 también permite restaurar a cualquier punto de los últimos 30 días (Time Travel).
 - Los archivos en R2 no entran en ese respaldo ni en Time Travel: un archivo eliminado desde la app no se puede recuperar.
 

@@ -130,7 +130,7 @@ Pega el valor cuando lo pida. Guárdalo también en tu gestor de contraseñas: s
 2. En la configuración de build:
    - **Build command:** déjalo vacío.
    - **Deploy command:** `npx wrangler d1 migrations apply control-campanas --remote && npx wrangler deploy`
-   - En la pestaña **Previews Base** (builds de ramas que no son `main`, como las de los Pull Requests), **Preview command:** `npx wrangler versions upload`. El valor por omisión, `npx wrangler preview`, falla porque pide un bloque `previews` en `wrangler.jsonc` con base de datos y bucket propios. Con `versions upload` cada PR valida y sube una versión sin publicarla ni tocar la base de datos.
+   - En la pestaña **Previews Base**, apaga **Builds for Preview branches**. Esos builds (los de ramas que no son `main`, como las de los Pull Requests) ejecutan `npx wrangler preview`, que falla porque pide un bloque `previews` en `wrangler.jsonc` con base de datos y bucket propios, y Cloudflare no respeta el campo *Preview command*. El deploy de `main` no se ve afectado.
 3. Guarda. Desde ahora, cada `git push` a `main` publica una versión nueva y aplica las migraciones pendientes de la base de datos.
 
 Si el build marca un error de permisos al aplicar migraciones, deja el deploy command en `npx wrangler deploy` y aplica las migraciones a mano con `npm run db:migrar` cuando agregues una nueva.

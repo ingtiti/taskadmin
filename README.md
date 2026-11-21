@@ -10,6 +10,7 @@ App de TiTi-Apps para el servicio de generación y calificación de contactos en
 - **Archivos:** sección con todos los documentos, filtro por empresa y búsqueda; se suben varios a la vez (hasta 100 MB cada uno), cada uno con una descripción de hasta 150 caracteres.
 - **Notas por empresa:** bitácora en la que cada nota queda con su autor y fecha; se puede ver la serie de notas de cada persona.
 - **Minutas:** sección para las minutas de cada reunión (empresa, fecha, asistentes, acuerdos y adjuntos).
+- **Ver y comentar archivos en línea:** vista previa dentro de la app (PDF, Word .docx, Excel .xlsx, CSV, imágenes, video, audio y texto) con comentarios de cada persona a un lado, sin descargar copias.
 - **Orden del día:** correo automático a las 8:00 (lunes a viernes, hora de Ciudad de México) a cada persona con sus actividades abiertas.
 - **Correo:** la cuenta que envía la orden del día se configura desde la app como en cualquier programa de correo (SMTP + IMAP). Por ahora: `tdsynnex@titi-apps.com`.
 
@@ -20,6 +21,14 @@ App de TiTi-Apps para el servicio de generación y calificación de contactos en
 - La contraseña se guarda cifrada (AES-GCM) con el secreto `CLAVE_CORREO` y nunca se devuelve al navegador.
 - Ya no hace falta verificar `titi-apps.com` en Email Service ni agregar sus registros DNS.
 - Si ya publicaste la versión 1: haz push de esta versión (la migración `0003_cuenta_correo.sql` se aplica sola), crea el secreto `CLAVE_CORREO` (paso 3) y configura la cuenta en **Correo**.
+
+## Ver y comentar archivos (versión 2.4)
+
+- En **Archivos** (y en los adjuntos de **Minutas**), el nombre del archivo o **Ver y comentar** abre el archivo dentro de la app, con los comentarios a un lado. **Descargar** sigue disponible.
+- Vista previa en línea: **PDF**, **Word (.docx)**, **Excel (.xlsx**, con pestañas por hoja**)**, **CSV**, imágenes, video, audio y texto. **PowerPoint**, `.doc` y `.xls` antiguos no se pueden mostrar en el navegador: se pueden comentar y descargar; para verlos en línea, súbelos también en PDF (o en .docx / .xlsx). Archivos de más de 60 MB (salvo video y audio) se descargan.
+- **Comentarios:** cada uno guarda su autor y fecha automáticamente; los elimina su autor o un líder global. La lista de Archivos muestra cuántos comentarios tiene cada archivo. Al eliminar un archivo se eliminan sus comentarios.
+- La vista previa se arma en el navegador con librerías incluidas en `public/vendor` (pdf.js, docx-preview, JSZip y ExcelJS; ver `public/vendor/README.md`), servidas desde el mismo dominio y detrás de Cloudflare Access: los archivos no se envían a ningún servicio externo. Se cargan solo al abrir un archivo de ese tipo. En los Word, los enlaces que no sean `http(s)` o `mailto` se desactivan.
+- La migración `0007_archivo_comentarios.sql` crea la tabla `archivo_comentarios`. No requiere configuración adicional en Cloudflare.
 
 ## Archivos, notas y minutas (versión 2.3)
 

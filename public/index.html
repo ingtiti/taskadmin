@@ -61,6 +61,7 @@ textarea{min-height:72px;resize:vertical;width:100%}
 select:focus-visible,input:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 13px;font-weight:600;cursor:pointer;min-height:36px;white-space:nowrap}
 .btn:hover{background:var(--surface-2)}
+a.btn{text-decoration:none;color:var(--fg)}
 .btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 .btn.primary:hover{filter:brightness(1.08)}
 .btn.danger{color:var(--risk);border-color:var(--risk)}
@@ -184,7 +185,7 @@ progress{width:100%;height:8px}
 .lote .fn-plain{font-weight:600;overflow-wrap:anywhere} .lote input[type=text]{width:100%;margin-top:6px}
 .lote li.ok{background:var(--ok-soft)} .lote li.error{background:var(--risk-soft)} .ok-txt{color:var(--ok);font-weight:600;font-size:13px}
 .tbl-arch td:first-child{min-width:260px} .chip-btn{border:0;cursor:pointer;margin-top:4px;font:inherit;font-size:12px}
-.foot-note{margin:0;padding:10px 12px;font-size:12.5px}
+.foot-note{margin:0;padding:10px 12px;font-size:12.5px} .sep-movil{display:none} @media (max-width:700px){.sep-movil{display:inline}}
 .notes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;max-height:420px;overflow:auto}
 .notes li{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
 .nh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px} .nh .btn-link{margin-left:auto}
@@ -195,10 +196,23 @@ progress{width:100%;height:8px}
 .minuta p{margin:0} .minuta details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:13px}
 .m-adj ul{margin:4px 0 0;padding-left:18px} #lista{display:flex;flex-direction:column;gap:14px} section#lista{display:block}
 .fm{font-size:12px;color:var(--muted)} .filters input[type=text]{min-width:220px}
+.link-btn{all:unset;cursor:pointer;font-weight:600;color:var(--accent);overflow-wrap:anywhere} .link-btn:hover{text-decoration:underline} .link-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chip.com{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.sheet.wide{width:min(1240px,100%)} .sheet.wide .sh{align-items:flex-start;gap:12px}
+.visor-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px}
+.visor{background:var(--surface-2);min-height:320px;height:calc(100vh - 190px);overflow:auto;padding:12px;border-right:1px solid var(--line);border-radius:0 0 0 14px}
+.visor canvas{display:block;margin:0 auto 12px;background:#fff;box-shadow:var(--shadow)} .visor .pag{margin:0 0 8px;text-align:center;font-size:12px}
+.visor img,.visor video{display:block;max-width:100%;margin:0 auto;background:#fff} .visor audio{width:100%;margin-top:40px}
+.visor pre.texto{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--surface);padding:12px;border-radius:8px;margin:0;font-family:var(--mono);font-size:12.5px}
+.visor table.hoja{border-collapse:collapse;background:var(--surface);font-size:12.5px;min-width:0} .visor table.hoja td{border:1px solid var(--line);padding:4px 8px;white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis}
+.tabs-hoja{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px} .visor .docx-wrapper{background:transparent;padding:0}
+.coments{display:flex;flex-direction:column;gap:10px;padding:14px;height:calc(100vh - 190px);min-height:320px} .coments h3{margin:0;font-size:14px}
+.coments #com-lista{flex:1;min-height:0;overflow:auto} .coments .notes{max-height:none}
+@media (max-width:900px){.visor-grid{grid-template-columns:minmax(0,1fr)} .visor{height:60vh;border-right:0;border-bottom:1px solid var(--line);border-radius:0} .coments{height:auto}}
 @media (max-width:1240px){.bar{column-gap:12px} nav.tabs a{padding:6px 8px;font-size:13px}}
 @media (max-width:700px){.tbl-arch{min-width:0} .tbl-arch thead{display:none} .tbl-arch tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:10px 12px;border-bottom:1px solid var(--line)}
   .tbl-arch td{border:0;padding:0} .tbl-arch td:first-child{grid-column:1/-1;min-width:0} .tbl-arch td.num{grid-column:2;grid-row:2;text-align:right}
-  .tbl-arch td:nth-child(2){grid-row:2} .tbl-arch td:nth-child(4){grid-row:3} .tbl-arch td:last-child{grid-column:2;grid-row:3;text-align:right}
+  .tbl-arch td:nth-child(2){grid-row:2} .tbl-arch td:nth-child(4){grid-column:1/-1;grid-row:3} .tbl-arch td:last-child{grid-column:1/-1;grid-row:4} .tbl-arch td:nth-child(4) br{display:none} 
   .filters input[type=text]{min-width:0;width:100%} .filters label{flex:1 1 160px}}
 </style>
 </head>
@@ -537,8 +551,14 @@ async function guardarCorreo(probar) {
 }
 
 /* ---------- formularios ---------- */
-function openSheet(html) { $('#sheet').innerHTML = html; $('#overlay').hidden = false; const f = $('#sheet input,#sheet select,#sheet textarea'); if (f) f.focus(); }
-function closeSheet() { const conNotas = !!$('#notas'); $('#overlay').hidden = true; $('#sheet').innerHTML = ''; lote = []; if (conNotas) cargar(); }
+function openSheet(html, clase = '') { $('#sheet').className = 'sheet' + (clase ? ' ' + clase : ''); $('#sheet').innerHTML = html; $('#overlay').hidden = false; const f = $('#sheet input,#sheet select,#sheet textarea'); if (f) f.focus(); }
+function closeSheet() {
+  const conNotas = !!$('#notas'), conVisor = !!$('#visor-arch');
+  visorSeq++; $('#overlay').hidden = true; $('#sheet').innerHTML = ''; $('#sheet').className = 'sheet'; lote = [];
+  if (visorURL) { URL.revokeObjectURL(visorURL); visorURL = null; }
+  if (conNotas) cargar();
+  if (conVisor) pintarLista();
+}
 const shHead = (t) => `<div class="sh"><h2 id="sheet-title">${t}</h2><button class="btn small" data-act="close" type="button">Cerrar</button></div>`;
 const showErr = (m) => { const el = $('#frm-err'); if (el) { el.hidden = false; el.textContent = m; } else toast(m); };
 
@@ -689,10 +709,10 @@ function listaArchivos() {
   if (!ls.length) return `<div class="empty"><b>${cache.archivos.length ? 'Ningún archivo coincide' : 'Todavía no hay archivos'}</b>${cache.archivos.length ? 'Cambia la empresa o la búsqueda.' : 'Usa Subir archivos para agregar el primero.'}</div>`;
   return `<div class="tbl-wrap"><table class="tbl-arch"><thead><tr><th>Archivo</th><th>Empresa</th><th>Tamaño</th><th>Subido</th><th></th></tr></thead><tbody>${ls.map((a) => {
     const e = empById[a.empresaId], borra = esLider() || esMio(a.subidoPor);
-    return `<tr><td><a class="fn" href="/api/archivos/${a.id}" download>${esc(a.nombre)}</a>${a.minutaId && a.descripcion === `Minuta: ${a.minutaTitulo || ''}`.slice(0, MAX_DESC_ARCHIVO) ? '' : `<div class="fd">${esc(a.descripcion)}</div>`}${a.minutaId ? `<button class="chip chip-btn" data-act="ver-minuta" data-id="${a.minutaId}">Minuta: ${esc(a.minutaTitulo || '')}</button>` : ''}</td>
+    return `<tr><td><button class="fn link-btn" data-act="ver-archivo" data-id="${a.id}">${esc(a.nombre)}</button>${a.comentarios ? ` <span class="chip com">${a.comentarios} ${a.comentarios === 1 ? 'comentario' : 'comentarios'}</span>` : ''}${a.minutaId && a.descripcion === `Minuta: ${a.minutaTitulo || ''}`.slice(0, MAX_DESC_ARCHIVO) ? '' : `<div class="fd">${esc(a.descripcion)}</div>`}${a.minutaId ? `<button class="chip chip-btn" data-act="ver-minuta" data-id="${a.minutaId}">Minuta: ${esc(a.minutaTitulo || '')}</button>` : ''}</td>
       <td>${e ? `<span class="chip emp">${esc(e.nombre)}</span>` : '—'}</td><td class="num">${fmtTam(a.tamano)}</td>
-      <td><span class="fm">${esc(nombreDe(a.subidoPor))}<br>${esc(fmtCuando(a.creado))}</span></td>
-      <td>${borra ? `<button class="btn small danger" data-act="del-archivo" data-id="${a.id}">Eliminar</button>` : ''}</td></tr>`;
+      <td><span class="fm">${esc(nombreDe(a.subidoPor))}<br><span class="sep-movil"> · </span>${esc(fmtCuando(a.creado))}</span></td>
+      <td><div class="t-act"><button class="btn small" data-act="ver-archivo" data-id="${a.id}">Ver y comentar</button><a class="btn small" href="/api/archivos/${a.id}" download aria-label="Descargar ${esc(a.nombre)}">Descargar</a>${borra ? `<button class="btn small danger" data-act="del-archivo" data-id="${a.id}">Eliminar</button>` : ''}</div></td></tr>`;
   }).join('')}</tbody></table></div><p class="muted foot-note">${ls.length} ${ls.length === 1 ? 'archivo' : 'archivos'} · ${fmtTam(ls.reduce((s, a) => s + a.tamano, 0))}</p>`;
 }
 function formSubir() {
@@ -765,6 +785,148 @@ async function enviarNota(f) {
   btn.disabled = false;
 }
 
+/* ---------- visor de archivos en línea y comentarios ---------- */
+// Las librerías (public/vendor) se cargan solo cuando se abre un archivo de ese tipo.
+const MAX_VISTA_MB = 60;
+const extDe = (n) => (String(n).includes('.') ? String(n).split('.').pop() : '').toLowerCase();
+function tipoVista(a) {
+  const e = extDe(a.nombre), t = String(a.tipo || '');
+  if (e === 'pdf' || t === 'application/pdf') return 'pdf';
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'avif'].includes(e) || t.startsWith('image/')) return 'img';
+  if (['mp4', 'webm', 'mov', 'm4v'].includes(e) || t.startsWith('video/')) return 'video';
+  if (['mp3', 'wav', 'm4a', 'ogg', 'aac'].includes(e) || t.startsWith('audio/')) return 'audio';
+  if (e === 'docx') return 'docx';
+  if (e === 'xlsx') return 'xlsx';
+  if (e === 'csv') return 'csv';
+  if (['txt', 'md', 'json', 'xml', 'html', 'htm', 'log', 'tsv'].includes(e) || t.startsWith('text/')) return 'texto';
+  return 'no';
+}
+const NO_VISTA = { ppt: 'PowerPoint', pptx: 'PowerPoint', doc: 'Word anterior a 2007 (.doc)', xls: 'Excel anterior a 2007 (.xls)', zip: 'ZIP' };
+const scripts = {};
+const cargarScript = (src) => (scripts[src] ||= new Promise((ok, mal) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => { delete scripts[src]; mal(new Error('No se pudo cargar el visor. Revisa tu conexión.')); }; document.head.appendChild(s); }));
+let visorURL = null, visorSeq = 0;
+const urlDe = (blob, tipo) => { if (visorURL) URL.revokeObjectURL(visorURL); visorURL = URL.createObjectURL(tipo ? new Blob([blob], { type: tipo }) : blob); return visorURL; };
+const MIME = { svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp', avif: 'image/avif', mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime', m4v: 'video/mp4', mp3: 'audio/mpeg', wav: 'audio/wav', m4a: 'audio/mp4', ogg: 'audio/ogg', aac: 'audio/aac' };
+
+function tablaHtml(filas, max = 2000) {
+  const n = Math.max(0, ...filas.slice(0, max).map((f) => f.length));
+  return `<table class="hoja"><tbody>${filas.slice(0, max).map((f) => `<tr>${Array.from({ length: n }, (_, i) => `<td>${esc(f[i] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table>${filas.length > max ? `<p class="muted">Se muestran las primeras ${max} filas de ${filas.length}. Descarga el archivo para verlo completo.</p>` : ''}`;
+}
+function parseCsv(t) {
+  const filas = [[]]; let c = '', q = false;
+  const sep = (t.split('\n')[0].match(/;/g) || []).length > (t.split('\n')[0].match(/,/g) || []).length ? ';' : ',';
+  for (let i = 0; i < t.length; i++) {
+    const ch = t[i];
+    if (q) { if (ch === '"' && t[i + 1] === '"') { c += '"'; i++; } else if (ch === '"') q = false; else c += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === sep) { filas[filas.length - 1].push(c); c = ''; }
+    else if (ch === '\n') { filas[filas.length - 1].push(c.replace(/\r$/, '')); filas.push([]); c = ''; }
+    else c += ch;
+  }
+  filas[filas.length - 1].push(c);
+  return filas.filter((f) => f.length > 1 || f[0] !== '');
+}
+// Enlaces dentro de un .docx: solo http(s) y mailto, y siempre en otra pestaña.
+function limpiarEnlaces(box) {
+  box.querySelectorAll('a[href]').forEach((a) => {
+    const h = a.getAttribute('href') || '';
+    if (/^(https?:|mailto:)/i.test(h)) { a.target = '_blank'; a.rel = 'noopener noreferrer'; } else if (!h.startsWith('#')) a.removeAttribute('href');
+  });
+}
+
+async function pintarVista(box, a, seq) {
+  const tipo = tipoVista(a), vivo = () => seq === visorSeq && box.isConnected;
+  if (tipo === 'no') {
+    const e = extDe(a.nombre);
+    box.innerHTML = `<div class="empty"><b>Vista previa no disponible${NO_VISTA[e] ? ` para ${NO_VISTA[e]}` : ''}</b>Puedes comentarlo aquí y descargarlo para abrirlo. ${e === 'ppt' || e === 'pptx' || e === 'doc' || e === 'xls' ? 'Para verlo en línea, súbelo también en PDF (o en .docx / .xlsx).' : ''}<br><a class="btn" href="/api/archivos/${a.id}" download>Descargar</a></div>`;
+    return;
+  }
+  if (a.tamano > MAX_VISTA_MB * 1048576 && tipo !== 'video' && tipo !== 'audio') {
+    box.innerHTML = `<div class="empty"><b>El archivo es muy grande para verlo en línea</b>Pesa ${fmtTam(a.tamano)}. Descárgalo para abrirlo.<br><a class="btn" href="/api/archivos/${a.id}" download>Descargar</a></div>`;
+    return;
+  }
+  box.innerHTML = `<div class="empty">Cargando ${esc(a.nombre)} (${fmtTam(a.tamano)})…</div>`;
+  const r = await fetch(`/api/archivos/${a.id}`, { credentials: 'same-origin' });
+  if (!r.ok) throw new Error(r.status === 404 ? 'El archivo ya no existe.' : 'No se pudo abrir el archivo.');
+  const blob = await r.blob();
+  if (!vivo()) return;
+  const e = extDe(a.nombre);
+  if (tipo === 'img') { box.innerHTML = `<img alt="${esc(a.nombre)}" src="${urlDe(blob, MIME[e] || a.tipo)}">`; return; }
+  if (tipo === 'video') { box.innerHTML = `<video controls playsinline src="${urlDe(blob, MIME[e] || a.tipo)}"></video>`; return; }
+  if (tipo === 'audio') { box.innerHTML = `<audio controls src="${urlDe(blob, MIME[e] || a.tipo)}"></audio>`; return; }
+  if (tipo === 'texto') { const t = await blob.text(); box.innerHTML = `<pre class="texto">${esc(t.slice(0, 500000))}</pre>${t.length > 500000 ? '<p class="muted">Se muestra solo el inicio del archivo.</p>' : ''}`; return; }
+  if (tipo === 'csv') { box.innerHTML = tablaHtml(parseCsv(await blob.text())); return; }
+  if (tipo === 'pdf') {
+    const pdfjs = await import('/vendor/pdfjs/pdf.min.mjs');
+    pdfjs.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.mjs';
+    const doc = await pdfjs.getDocument({ data: await blob.arrayBuffer(), isEvalSupported: false, enableXfa: false }).promise;
+    if (!vivo()) return;
+    box.innerHTML = `<p class="muted pag">${doc.numPages} ${doc.numPages === 1 ? 'página' : 'páginas'}</p>`;
+    const ancho = Math.max(280, box.clientWidth - 24), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    for (let i = 1; i <= doc.numPages && vivo(); i++) {
+      const pg = await doc.getPage(i), v1 = pg.getViewport({ scale: 1 }), vp = pg.getViewport({ scale: (ancho / v1.width) * dpr });
+      const cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height; cv.style.width = `${vp.width / dpr}px`;
+      cv.setAttribute('aria-label', `Página ${i}`); box.appendChild(cv);
+      await pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+    }
+    return;
+  }
+  if (tipo === 'docx') {
+    await cargarScript('/vendor/jszip/jszip.min.js'); await cargarScript('/vendor/docx-preview/docx-preview.min.js');
+    if (!vivo()) return;
+    box.innerHTML = '';
+    await window.docx.renderAsync(blob, box, null, { inWrapper: true, ignoreLastRenderedPageBreak: true, experimental: false, useBase64URL: true });
+    limpiarEnlaces(box);
+    return;
+  }
+  if (tipo === 'xlsx') {
+    await cargarScript('/vendor/exceljs/exceljs.min.js');
+    const wb = new window.ExcelJS.Workbook(); await wb.xlsx.load(await blob.arrayBuffer());
+    if (!vivo()) return;
+    const hojas = wb.worksheets.map((ws) => { const filas = []; ws.eachRow({ includeEmpty: true }, (row, n) => { const f = []; row.eachCell({ includeEmpty: true }, (cell, c) => { f[c - 1] = cell.value instanceof Date ? cell.value.toLocaleDateString('es-MX', { timeZone: 'UTC' }) : cell.result instanceof Date ? cell.result.toLocaleDateString('es-MX', { timeZone: 'UTC' }) : cell.text ?? ''; }); filas[n - 1] = f; }); return { nombre: ws.name, filas: Array.from(filas, (f) => f || []) }; });
+    box.innerHTML = `${hojas.length > 1 ? `<div class="tabs-hoja" role="tablist">${hojas.map((h, i) => `<button class="btn small ${i ? '' : 'primary'}" data-act="hoja" data-i="${i}" role="tab">${esc(h.nombre)}</button>`).join('')}</div>` : ''}<div id="hoja">${tablaHtml(hojas[0] ? hojas[0].filas : [])}</div>`;
+    box._hojas = hojas;
+  }
+}
+
+let comentariosSeq = 0;
+function verArchivo(id) {
+  const a = (cache.archivos || []).find((x) => x.id === id);
+  if (!a) { toast('El archivo ya no existe'); cargarListas(); return; }
+  const e = empById[a.empresaId], seq = ++visorSeq;
+  openSheet(`<div class="sh"><div style="min-width:0"><h2 id="sheet-title" class="fn-plain">${esc(a.nombre)}</h2><div class="fd">${esc(a.descripcion)}</div>
+      <div class="t-meta">${e ? `<span class="chip emp">${esc(e.nombre)}</span>` : ''}${a.minutaId ? `<span class="chip">Minuta: ${esc(a.minutaTitulo || '')}</span>` : ''}<span class="chip">${fmtTam(a.tamano)}</span><span class="chip">${esc(nombreDe(a.subidoPor))} · ${esc(fmtCuando(a.creado))}</span></div></div>
+    <div class="inline"><a class="btn small" href="/api/archivos/${a.id}" download>Descargar</a><button class="btn small" data-act="close" type="button">Cerrar</button></div></div>
+    <div class="visor-grid" id="visor-arch" data-id="${a.id}"><div class="visor" id="visor" tabindex="0" aria-label="Vista previa"></div>
+    <aside class="coments"><h3>Comentarios</h3><div id="com-lista" class="muted">Cargando…</div>
+      ${puedeEditar() ? `<form id="frm-com" data-id="${a.id}" class="f"><textarea id="c-texto" maxlength="${MAX_NOTA}" required placeholder="Escribe un comentario sobre este archivo…"></textarea>
+        <div class="inline" style="justify-content:space-between"><span class="counter" id="c-count">0 / ${MAX_NOTA}</span><button class="btn primary small" type="submit">Comentar</button></div><p class="err" id="frm-err" hidden></p></form>` : ''}</aside></div>`, 'wide');
+  $('#visor').focus({ preventScroll: true }); $('#overlay').scrollTop = 0;
+  pintarVista($('#visor'), a, seq).catch((err) => { if (seq === visorSeq && $('#visor')) $('#visor').innerHTML = `<div class="empty"><b>No se pudo mostrar el archivo</b>${esc(err.message || '')}<br><a class="btn" href="/api/archivos/${a.id}" download>Descargar</a></div>`; });
+  cargarComentarios(a.id);
+}
+async function cargarComentarios(id) {
+  const seq = ++comentariosSeq;
+  try {
+    const ls = await api('GET', `/api/archivos/${id}/comentarios`);
+    const box = $('#com-lista'); if (seq !== comentariosSeq || !box) return;
+    const a = (cache.archivos || []).find((x) => x.id === id); if (a) a.comentarios = ls.length;
+    box.className = '';
+    box.innerHTML = ls.length ? `<ol class="notes">${ls.map((c) => `<li><div class="nh"><span class="av">${esc(ini(c.autorNombre))}</span><b>${esc(c.autorNombre || c.autorEmail)}</b><span class="muted">${esc(fmtCuando(c.creado))}</span>
+      ${esLider() || esMio(c.autorEmail) ? `<button class="btn-link danger-link" data-act="del-com" data-id="${c.id}">Eliminar</button>` : ''}</div><div class="nt">${esc(c.texto)}</div></li>`).join('')}</ol>`
+      : '<p class="muted" style="margin:0">Sin comentarios todavía.</p>';
+    const ol = box.querySelector('.notes'); if (ol) ol.scrollTop = ol.scrollHeight;
+  } catch (err) { const box = $('#com-lista'); if (seq === comentariosSeq && box) { box.className = 'err'; box.textContent = err.message; } }
+}
+async function enviarComentario(f) {
+  const t = $('#c-texto').value.trim(), btn = f.querySelector('button[type=submit]');
+  if (!t) return showErr('Escribe el comentario.');
+  btn.disabled = true;
+  try { await api('POST', `/api/archivos/${f.dataset.id}/comentarios`, { texto: t }); $('#c-texto').value = ''; $('#c-count').textContent = `0 / ${MAX_NOTA}`; $('#frm-err').hidden = true; await cargarComentarios(f.dataset.id); }
+  catch (e) { showErr(e.message); }
+  btn.disabled = false;
+}
+
 /* ---------- sección Minutas ---------- */
 function vMinutas() {
   if (!cache.minutas) cargarListas(); else setTimeout(cargarListas, 0);
@@ -786,7 +948,7 @@ function listaMinutas() {
       ${edita ? `<div class="t-act"><button class="btn small" data-act="edit-m" data-id="${m.id}">Editar</button></div>` : ''}</div>
       <div class="pb">${m.asistentes ? `<p class="m-asis"><b>Asistentes:</b> ${esc(m.asistentes)}</p>` : ''}
       ${m.contenido ? `<details ${m.contenido.length < 400 ? 'open' : ''}><summary>${m.contenido.length < 400 ? 'Contenido' : 'Ver minuta completa'}</summary><div class="nt">${esc(m.contenido)}</div></details>` : ''}
-      ${adj.length ? `<div class="m-adj"><b>Adjuntos</b><ul>${adj.map((a) => `<li><a class="fn" href="/api/archivos/${a.id}" download>${esc(a.nombre)}</a> <span class="muted">· ${fmtTam(a.tamano)}</span></li>`).join('')}</ul></div>` : ''}
+      ${adj.length ? `<div class="m-adj"><b>Adjuntos</b><ul>${adj.map((a) => `<li><button class="fn link-btn" data-act="ver-archivo" data-id="${a.id}">${esc(a.nombre)}</button> <span class="muted">· ${fmtTam(a.tamano)}${a.comentarios ? ` · ${a.comentarios} ${a.comentarios === 1 ? 'comentario' : 'comentarios'}` : ''}</span></li>`).join('')}</ul></div>` : ''}
       <p class="fm">Capturada por ${esc(nombreDe(m.creadaPor))} · ${esc(fmtCuando(m.creada))}${m.actualizadaPor && m.actualizada !== m.creada ? ` · editada por ${esc(nombreDe(m.actualizadaPor))} · ${esc(fmtCuando(m.actualizada))}` : ''}</p></div></article>`;
   }).join('');
 }
@@ -877,6 +1039,12 @@ document.addEventListener('click', async (ev) => {
     else if (a === 'notas') formNotas(id);
     else if (a === 'ir-archivos' || a === 'ir-minutas') { ui.fEmp = id; saveUi(); ui.tab = a === 'ir-archivos' ? 'archivos' : 'minutas'; history.replaceState(null, '', '#' + ui.tab); render(); window.scrollTo(0, 0); }
     else if (a === 'subir') formSubir();
+    else if (a === 'ver-archivo') verArchivo(id);
+    else if (a === 'hoja') { const v = $('#visor'); v.querySelectorAll('[data-act=hoja]').forEach((x) => x.classList.toggle('primary', x === b)); $('#hoja').innerHTML = tablaHtml(v._hojas[Number(b.dataset.i)].filas); }
+    else if (a === 'del-com') {
+      if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'Confirmar'; return; }
+      await api('DELETE', `/api/comentarios/${id}`); await cargarComentarios($('#visor-arch').dataset.id);
+    }
     else if (a === 'new-m') formMinuta();
     else if (a === 'edit-m') formMinuta(id);
     else if (a === 'ver-minuta') {
@@ -940,6 +1108,7 @@ document.addEventListener('change', async (ev) => {
 document.addEventListener('submit', async (ev) => {
   if (ev.target.id === 'frm-lote') { ev.preventDefault(); enviarLote(ev.target); return; }
   if (ev.target.id === 'frm-nota') { ev.preventDefault(); enviarNota(ev.target); return; }
+  if (ev.target.id === 'frm-com') { ev.preventDefault(); enviarComentario(ev.target); return; }
   if (ev.target.id === 'frm-minuta') { ev.preventDefault(); enviarMinuta(ev.target); return; }
   if (ev.target.id === 'frm-correo') { ev.preventDefault(); guardarCorreo(ev.submitter && ev.submitter.value === 'probar'); return; }
   if (ev.target.id !== 'frm') return;
@@ -975,6 +1144,7 @@ document.addEventListener('input', (ev) => {
   const t = ev.target;
   if (t.classList.contains('l-desc')) { const x = lote[Number(t.dataset.i)]; if (x) { x.desc = t.value; if (x.error === 'Falta la descripción') { x.error = ''; x.estado = 'listo'; } } return; }
   if (t.id === 'n-texto') { $('#n-count').textContent = `${t.value.length} / ${MAX_NOTA}`; return; }
+  if (t.id === 'c-texto') { $('#c-count').textContent = `${t.value.length} / ${MAX_NOTA}`; return; }
   if (t.dataset.q) { ui[t.dataset.q] = t.value; pintarLista(); }
 });
 document.addEventListener('dragover', (ev) => { const d = ev.target.closest && ev.target.closest('#drop'); if (d) { ev.preventDefault(); d.classList.add('over'); } });

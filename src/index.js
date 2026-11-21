@@ -213,6 +213,29 @@ async function api(req, env, url) {
       return json({ id }, 201);
     }
   }
+  // Comentarios de cada archivo
+  if ((r = p.match(/^\/api\/archivos\/([\w-]+)\/comentarios$/))) {
+    const a = await datos.leerArchivo(env, r[1]);
+    if (!a) throw new HttpError(404, 'El archivo ya no existe.');
+    if (m === 'GET') return json(await datos.listarComentarios(env, a.id));
+    if (m === 'POST') {
+      registrado(yo);
+      const texto = String((await body(req)).texto ?? '').trim();
+      if (!texto) throw new HttpError(400, 'Escribe el comentario.');
+      if (texto.length > 2000) throw new HttpError(400, 'El comentario admite hasta 2000 caracteres.');
+      const id = crypto.randomUUID();
+      await datos.crearComentario(env, { id, texto }, a, yo);
+      return json({ id }, 201);
+    }
+  }
+  if ((r = p.match(/^\/api\/comentarios\/([\w-]+)$/)) && m === 'DELETE') {
+    const c = await datos.leerComentario(env, r[1]);
+    if (!c) throw new HttpError(404, 'El comentario ya no existe.');
+    if (!yo.esLider && c.autorEmail !== email) throw new HttpError(403, 'Solo quien escribió el comentario o un líder global puede eliminarlo.');
+    const a = await datos.leerArchivo(env, c.archivoId);
+    await datos.borrarComentario(env, c, a ? a.empresaId : '', email);
+    return json({ ok: true });
+  }
   if ((r = p.match(/^\/api\/archivos\/([\w-]+)$/))) {
     const a = await datos.leerArchivo(env, r[1]);
     if (!a) throw new HttpError(404, 'El archivo ya no existe.');

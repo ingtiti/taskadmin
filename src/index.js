@@ -28,7 +28,7 @@ const uno = (v, lista, campo) => { if (!lista.includes(v)) throw new HttpError(4
 const ids = (v) => (Array.isArray(v) ? [...new Set(v.map(String))].filter((x) => /^[\w-]{1,64}$/.test(x)).slice(0, 50) : []);
 
 function valEmpresa(b) {
-  return { nombre: txt(b.nombre, 120, 'el nombre', true), contacto: txt(b.contacto, 120, 'Contacto'), inicio: fecha(b.inicio, 'Fecha de arranque'), notas: txt(b.notas, 2000, 'Notas') };
+  return { nombre: txt(b.nombre, 120, 'el nombre', true), contacto: txt(b.contacto, 120, 'Contacto'), inicio: fecha(b.inicio, 'Fecha de arranque') };
 }
 function valPersona(b) {
   const email = txt(b.email, 160, 'Correo').toLowerCase();
@@ -93,11 +93,13 @@ function r2(env) {
   if (!env.ARCHIVOS) throw new HttpError(503, 'El almacenamiento de archivos (R2) no está configurado.');
   return env.ARCHIVOS;
 }
-function valArchivo(req, url) {
+function valArchivo(req, url, minuta = null) {
   const nombre = String(url.searchParams.get('nombre') ?? '').replace(/[\u0000-\u001f\u007f\\/]/g, '').trim();
   if (!nombre) throw new HttpError(400, 'Falta el nombre del archivo.');
   if (nombre.length > 200) throw new HttpError(400, 'El nombre del archivo es demasiado largo (máximo 200 caracteres).');
-  const descripcion = String(url.searchParams.get('descripcion') ?? '').trim();
+  let descripcion = String(url.searchParams.get('descripcion') ?? '').trim();
+  // Los adjuntos de una minuta toman su título como descripción si no traen una.
+  if (!descripcion && minuta) descripcion = `Minuta: ${minuta.titulo}`.slice(0, MAX_DESC_ARCHIVO);
   if (!descripcion) throw new HttpError(400, 'Escribe una descripción del archivo.');
   if (descripcion.length > MAX_DESC_ARCHIVO) throw new HttpError(400, `La descripción admite hasta ${MAX_DESC_ARCHIVO} caracteres.`);
   const tamano = Number(req.headers.get('content-length'));
@@ -108,6 +110,22 @@ function valArchivo(req, url) {
 }
 // Siempre como descarga y en "sandbox", para que un HTML o SVG subido nunca se ejecute dentro de la app.
 const disposicion = (n) => `attachment; filename="${n.replace(/[^\x20-\x7e]|["\\]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(n)}`;
+
+async function valMinuta(env, b) {
+  const d = {
+    empresaId: txt(b.empresaId, 64, 'la empresa', true),
+    fecha: fecha(b.fecha, 'Fecha de la reunión', true),
+    titulo: txt(b.titulo, 200, 'el título', true),
+    asistentes: txt(b.asistentes, 500, 'Asistentes'),
+    contenido: txt(b.contenido, 20000, 'El contenido'),
+  };
+  if (!(await datos.existe(env, 'empresas', d.empresaId))) throw new HttpError(400, 'La empresa no existe.');
+  return d;
+}
+// Una minuta la editan (y le agregan o quitan adjuntos) quien la creó o un líder global.
+const autorOLider = (yo, autor, que) => {
+  if (!yo.esLider && autor !== yo.email) throw new HttpError(403, `Solo quien creó ${que} o un líder global puede modificarla.`);
+};
 
 async function body(req) {
   try { return (await req.json()) || {}; } catch { throw new HttpError(400, 'Solicitud no válida.'); }
@@ -168,6 +186,11 @@ async function api(req, env, url) {
     await datos.crearPlan(env, e.id, lista, email);
     return json({ creadas: lista.length }, 201);
   }
+  // Archivos: lista general con filtro opcional por empresa (?empresa=ID).
+  if (m === 'GET' && p === '/api/archivos') {
+    const emp = url.searchParams.get('empresa');
+    return json(await datos.listarArchivos(env, emp && /^[\w-]{1,64}$/.test(emp) ? emp : null));
+  }
   if ((r = p.match(/^\/api\/empresas\/([\w-]+)\/archivos$/))) {
     const empresaId = r[1];
     if (m === 'GET') return json(await datos.listarArchivos(env, empresaId));
@@ -175,10 +198,17 @@ async function api(req, env, url) {
       registrado(yo);
       const bucket = r2(env);
       if (!(await datos.existe(env, 'empresas', empresaId))) throw new HttpError(404, 'La empresa no existe.');
-      const a = valArchivo(req, url);
+      let minuta = null;
+      const minutaId = url.searchParams.get('minuta');
+      if (minutaId) {
+        minuta = await datos.leerMinuta(env, minutaId);
+        if (!minuta || minuta.empresaId !== empresaId) throw new HttpError(404, 'La minuta no existe.');
+        autorOLider(yo, minuta.creadaPor, 'la minuta');
+      }
+      const a = valArchivo(req, url, minuta);
       const id = crypto.randomUUID(), clave = `empresas/${empresaId}/${id}`;
       await bucket.put(clave, req.body, { httpMetadata: { contentType: a.tipo }, customMetadata: { empresaId, subidoPor: email } });
-      try { await datos.crearArchivo(env, { id, empresaId, clave, ...a }, email); }
+      try { await datos.crearArchivo(env, { id, empresaId, clave, minutaId: minuta ? minuta.id : null, ...a }, email); }
       catch (e) { await bucket.delete(clave); throw e; }
       return json({ id }, 201);
     }
@@ -202,6 +232,57 @@ async function api(req, env, url) {
       return json({ ok: true });
     }
   }
+  // Notas de empresa: bitácora; autor y fecha los pone el servidor.
+  if ((r = p.match(/^\/api\/empresas\/([\w-]+)\/notas$/))) {
+    if (m === 'GET') return json(await datos.listarNotas(env, r[1]));
+    if (m === 'POST') {
+      registrado(yo);
+      if (!(await datos.existe(env, 'empresas', r[1]))) throw new HttpError(404, 'La empresa no existe.');
+      const texto = String((await body(req)).texto ?? '').trim();
+      if (!texto) throw new HttpError(400, 'Escribe la nota.');
+      if (texto.length > 2000) throw new HttpError(400, 'La nota admite hasta 2000 caracteres.');
+      const id = crypto.randomUUID();
+      await datos.crearNota(env, { id, empresaId: r[1], texto }, yo);
+      return json({ id }, 201);
+    }
+  }
+  if ((r = p.match(/^\/api\/notas\/([\w-]+)$/)) && m === 'DELETE') {
+    const n = await datos.leerNota(env, r[1]);
+    if (!n) throw new HttpError(404, 'La nota ya no existe.');
+    if (!yo.esLider && n.autorEmail !== email) throw new HttpError(403, 'Solo quien escribió la nota o un líder global puede eliminarla.');
+    await datos.borrarNota(env, n, email);
+    return json({ ok: true });
+  }
+
+  // Minutas de reunión
+  if (p === '/api/minutas') {
+    if (m === 'GET') {
+      const emp = url.searchParams.get('empresa');
+      return json(await datos.listarMinutas(env, emp && /^[\w-]{1,64}$/.test(emp) ? emp : null));
+    }
+    if (m === 'POST') {
+      registrado(yo);
+      const id = crypto.randomUUID();
+      await datos.guardarMinuta(env, id, await valMinuta(env, await body(req)), email, true);
+      return json({ id }, 201);
+    }
+  }
+  if ((r = p.match(/^\/api\/minutas\/([\w-]+)$/))) {
+    const mi = await datos.leerMinuta(env, r[1]);
+    if (!mi) throw new HttpError(404, 'La minuta ya no existe.');
+    if (m === 'PUT') {
+      registrado(yo); autorOLider(yo, mi.creadaPor, 'la minuta');
+      await datos.guardarMinuta(env, mi.id, await valMinuta(env, await body(req)), email, false);
+      return json({ ok: true });
+    }
+    if (m === 'DELETE') {
+      registrado(yo); autorOLider(yo, mi.creadaPor, 'la minuta');
+      const claves = await datos.borrarMinuta(env, mi, email);
+      if (claves.length) await r2(env).delete(claves);
+      return json({ ok: true });
+    }
+  }
+
   if ((r = p.match(/^\/api\/empresas\/([\w-]+)$/))) {
     lider(yo);
     if (m === 'PUT') { await datos.guardarEmpresa(env, r[1], valEmpresa(await body(req)), email, false); return json({ ok: true }); }

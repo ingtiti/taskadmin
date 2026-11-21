@@ -46,7 +46,7 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 .brand b{font-family:var(--display);font-size:19px;letter-spacing:-.01em}
 .brand span{font-size:12px;color:var(--muted)}
 nav.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
-nav.tabs a{padding:7px 12px;border-radius:8px;text-decoration:none;color:var(--muted);font-weight:600;font-size:13.5px}
+nav.tabs a{padding:7px 10px;border-radius:8px;text-decoration:none;color:var(--muted);font-weight:600;font-size:13.5px}
 nav.tabs a:hover{background:var(--surface-2);color:var(--fg)}
 nav.tabs a[aria-current="page"]{background:var(--accent);color:var(--accent-fg)}
 main{padding-block:22px 64px;display:flex;flex-direction:column;gap:20px}
@@ -168,14 +168,38 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .files{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;max-height:340px;overflow:auto}
 .files li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
 .files li:first-child{border-top:0}
-.files .fn{font-weight:600;overflow-wrap:anywhere;color:var(--accent);text-decoration:none}
-.files .fn:hover{text-decoration:underline}
+.fn{font-weight:600;overflow-wrap:anywhere;color:var(--accent);text-decoration:none}
+.fn:hover{text-decoration:underline}
+.fd{font-size:13px;margin-top:2px;overflow-wrap:anywhere}
 .files .fd{font-size:13px;margin-top:2px;overflow-wrap:anywhere}
 .files .fm{font-size:12px;color:var(--muted);margin-top:2px}
 .upload{display:flex;flex-direction:column;gap:10px;border:1px dashed var(--line);border-radius:10px;padding:12px;background:var(--surface-2)}
 .upload input[type=file]{max-width:100%}
 .counter{font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
 progress{width:100%;height:8px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:18px 14px;text-align:center;display:flex;flex-direction:column;gap:4px;background:var(--surface-2)}
+.drop label{cursor:pointer;color:var(--accent)} .drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.lote .fn-plain{font-weight:600;overflow-wrap:anywhere} .lote input[type=text]{width:100%;margin-top:6px}
+.lote li.ok{background:var(--ok-soft)} .lote li.error{background:var(--risk-soft)} .ok-txt{color:var(--ok);font-weight:600;font-size:13px}
+.tbl-arch td:first-child{min-width:260px} .chip-btn{border:0;cursor:pointer;margin-top:4px;font:inherit;font-size:12px}
+.foot-note{margin:0;padding:10px 12px;font-size:12.5px}
+.notes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;max-height:420px;overflow:auto}
+.notes li{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
+.nh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px} .nh .btn-link{margin-left:auto}
+.nt{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:6px;font-size:14px}
+.danger-link{color:var(--risk)}
+.last-note{border-left:3px solid var(--accent);padding-left:8px;font-size:12px} .last-note .t-desc{margin:2px 0 0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.minuta h2{font-size:16px} .minuta .t-meta{margin-top:4px} .minuta .pb{display:flex;flex-direction:column;gap:10px}
+.minuta p{margin:0} .minuta details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:13px}
+.m-adj ul{margin:4px 0 0;padding-left:18px} #lista{display:flex;flex-direction:column;gap:14px} section#lista{display:block}
+.fm{font-size:12px;color:var(--muted)} .filters input[type=text]{min-width:220px}
+@media (max-width:1240px){.bar{column-gap:12px} nav.tabs a{padding:6px 8px;font-size:13px}}
+@media (max-width:700px){.tbl-arch{min-width:0} .tbl-arch thead{display:none} .tbl-arch tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:10px 12px;border-bottom:1px solid var(--line)}
+  .tbl-arch td{border:0;padding:0} .tbl-arch td:first-child{grid-column:1/-1;min-width:0} .tbl-arch td.num{grid-column:2;grid-row:2;text-align:right}
+  .tbl-arch td:nth-child(2){grid-row:2} .tbl-arch td:nth-child(4){grid-row:3} .tbl-arch td:last-child{grid-column:2;grid-row:3;text-align:right}
+  .filters input[type=text]{min-width:0;width:100%} .filters label{flex:1 1 160px}}
 </style>
 </head>
 <body>
@@ -187,6 +211,8 @@ progress{width:100%;height:8px}
       <a href="#actividades" data-tab="actividades">Actividades</a>
       <a href="#personal" data-tab="personal">Personal</a>
       <a href="#empresas" data-tab="empresas">Empresas</a>
+      <a href="#archivos" data-tab="archivos">Archivos</a>
+      <a href="#minutas" data-tab="minutas">Minutas</a>
       <a href="#orden" data-tab="orden">Orden del día</a>
       <a href="#perfiles" data-tab="perfiles" id="tab-perfiles" hidden>Perfiles</a>
       <a href="#correo" data-tab="correo" id="tab-correo" hidden>Correo</a>
@@ -206,10 +232,10 @@ progress{width:100%;height:8px}
 import { ESTADOS, PRIORIDADES, SEM, SEM_ORDER, esc, hoyCDMX, addDays, habil, fmt, fmtLargo, sem as semH, rel as relH, byFecha } from './js/logica.js';
 
 const st = { empresas: [], personal: [], tareas: [], perfiles: [], envio: null, yo: null, hoy: hoyCDMX(), status: 'loading', error: '' };
-const ui = { tab: 'tablero', fEmp: '', fPer: '', fEst: 'abiertas', fSem: '', ordenPer: '' };
+const ui = { tab: 'tablero', fEmp: '', fPer: '', fEst: 'abiertas', fSem: '', ordenPer: '', qArch: '', qMin: '' };
 try { const s = JSON.parse(localStorage.getItem('ccl-ui') || '{}'); ui.fEmp = s.fEmp || ''; ui.fPer = s.fPer || ''; } catch (e) {}
 const saveUi = () => { try { localStorage.setItem('ccl-ui', JSON.stringify({ fEmp: ui.fEmp, fPer: ui.fPer })); } catch (e) {} };
-const TABS = ['tablero', 'actividades', 'personal', 'empresas', 'perfiles', 'orden', 'correo'];
+const TABS = ['tablero', 'actividades', 'personal', 'empresas', 'archivos', 'minutas', 'perfiles', 'orden', 'correo'];
 if (TABS.includes(location.hash.slice(1))) ui.tab = location.hash.slice(1);
 
 const $ = (s) => document.querySelector(s);
@@ -267,7 +293,7 @@ function render() {
   $('#tab-correo').hidden = !esLider();
   $('#tab-perfiles').hidden = !esLider();
   if ((ui.tab === 'correo' || ui.tab === 'perfiles') && !esLider()) ui.tab = 'tablero';
-  m.innerHTML = aviso + { tablero: vTablero, actividades: vActividades, personal: vPersonal, empresas: vEmpresas, perfiles: vPerfiles, orden: vOrden, correo: vCorreo }[ui.tab]();
+  m.innerHTML = aviso + { tablero: vTablero, actividades: vActividades, personal: vPersonal, empresas: vEmpresas, archivos: vArchivos, minutas: vMinutas, perfiles: vPerfiles, orden: vOrden, correo: vCorreo }[ui.tab]();
   if (ui.tab === 'orden') cargarVistaPrevia();
   if (ui.tab === 'correo') cargarCuenta();
 }
@@ -375,8 +401,9 @@ function vEmpresas() {
     return `<article class="panel card"><div class="head" style="align-items:flex-start"><h2>${esc(e.nombre)}</h2><span class="badge">${te.length} actividades</span></div>
     <dl class="kv"><dt>Contacto</dt><dd>${esc(e.contacto || '—')}</dd><dt>Arranque</dt><dd>${e.inicio ? fmtLargo(e.inicio) : '<span class="err">Sin fecha</span>'}</dd><dt>Equipo</dt><dd>${equipo.map((p) => esc(p.nombre)).join(', ') || '<span class="muted">Sin asignar</span>'}</dd></dl>
     ${te.length ? segbar(c) : ''}
-    ${e.notas ? `<p class="t-desc" style="margin:0">${esc(e.notas)}</p>` : ''}
-    <div class="acts">${esLider() ? `<button class="btn small" data-act="edit-e" data-id="${e.id}">Editar</button><button class="btn small ${te.length ? '' : 'primary'}" data-act="plan" data-id="${e.id}">${te.length ? 'Volver a cargar plan' : 'Cargar plan de trabajo'}</button>` : ''}<button class="btn small" data-act="archivos" data-id="${e.id}">Archivos (${e.archivos || 0})</button></div></article>`;
+    ${e.ultimaNota ? `<div class="last-note"><span class="muted">Última nota · ${esc(e.ultimaNota.autor)} · ${esc(fmtCuando(e.ultimaNota.creada))}</span><p class="t-desc">${esc(e.ultimaNota.texto)}</p></div>` : ''}
+    <div class="acts"><button class="btn small" data-act="notas" data-id="${e.id}">Notas (${e.notas || 0})</button><button class="btn small" data-act="ir-archivos" data-id="${e.id}">Archivos (${e.archivos || 0})</button><button class="btn small" data-act="ir-minutas" data-id="${e.id}">Minutas (${e.minutas || 0})</button></div>
+    ${esLider() ? `<div class="acts"><button class="btn small" data-act="edit-e" data-id="${e.id}">Editar</button><button class="btn small ${te.length ? '' : 'primary'}" data-act="plan" data-id="${e.id}">${te.length ? 'Volver a cargar plan' : 'Cargar plan de trabajo'}</button></div>` : ''}</article>`;
   }).join('');
   return `<div class="head"><div><h1>Empresas</h1><p class="sub">Campañas en ejecución en paralelo. El plan de trabajo crea las actividades de 6 meses a partir de la fecha de arranque.</p></div>${esLider() ? '<button class="btn primary" data-act="new-e">Nueva empresa</button>' : ''}</div>
   ${st.empresas.length ? `<div class="cards">${cards}</div>` : '<div class="panel"><div class="empty"><b>Sin empresas registradas</b>Agrega cada cliente con su fecha de arranque.</div></div>'}`;
@@ -511,7 +538,7 @@ async function guardarCorreo(probar) {
 
 /* ---------- formularios ---------- */
 function openSheet(html) { $('#sheet').innerHTML = html; $('#overlay').hidden = false; const f = $('#sheet input,#sheet select,#sheet textarea'); if (f) f.focus(); }
-function closeSheet() { const conArchivos = !!$('#archivos'); $('#overlay').hidden = true; $('#sheet').innerHTML = ''; if (conArchivos) render(); }
+function closeSheet() { const conNotas = !!$('#notas'); $('#overlay').hidden = true; $('#sheet').innerHTML = ''; lote = []; if (conNotas) cargar(); }
 const shHead = (t) => `<div class="sh"><h2 id="sheet-title">${t}</h2><button class="btn small" data-act="close" type="button">Cerrar</button></div>`;
 const showErr = (m) => { const el = $('#frm-err'); if (el) { el.hidden = false; el.textContent = m; } else toast(m); };
 
@@ -553,49 +580,41 @@ function formEmpresa(id) {
     <label class="f"><span>Empresa</span><input type="text" id="e-nombre" required maxlength="120" value="${esc(e.nombre)}"></label>
     <div class="f2"><label class="f"><span>Contacto del cliente</span><input type="text" id="e-contacto" maxlength="120" value="${esc(e.contacto || '')}"></label>
     <label class="f"><span>Fecha de arranque (kickoff)</span><input type="date" id="e-inicio" value="${esc(e.inicio || '')}"></label></div>
-    <label class="f"><span>Notas</span><textarea id="e-notas" maxlength="2000">${esc(e.notas || '')}</textarea></label>
+    <p class="muted" style="margin:0;font-size:12.5px">Las notas de la empresa se capturan con el botón <b>Notas</b> de su tarjeta: cada una queda con su autor y fecha.</p>
     <p class="err" id="frm-err" hidden></p>
     <div class="foot">${id ? `<button class="btn danger" type="button" data-act="del" data-col="empresas" data-id="${id}">Eliminar</button>` : '<span></span>'}<button class="btn primary" type="submit">${id ? 'Guardar cambios' : 'Crear empresa'}</button></div></form>`);
 }
-/* ---------- archivos de empresa ---------- */
-const MAX_DESC_ARCHIVO = 150, MAX_ARCHIVO_MB = 100;
+/* ---------- utilidades de archivos, notas y minutas ---------- */
+const MAX_DESC_ARCHIVO = 150, MAX_ARCHIVO_MB = 100, MAX_NOTA = 2000;
 const fmtTam = (b) => (b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1048576).toFixed(1)} MB`);
 const fmtCuando = (s) => { const d = new Date(String(s).replace(' ', 'T') + 'Z'); return Number.isNaN(+d) ? '' : d.toLocaleString('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'medium', timeStyle: 'short' }); };
-let archivosSeq = 0;
-function formArchivos(id) {
-  const e = empById[id]; if (!e) return;
-  openSheet(shHead('Archivos · ' + esc(e.nombre)) + `<div class="sb" id="archivos" data-id="${id}">
-    ${puedeEditar() ? `<form class="upload" id="frm-archivo" data-id="${id}">
-      <label class="f"><span>Archivo (máximo ${MAX_ARCHIVO_MB} MB)</span><input type="file" id="a-file" required></label>
-      <label class="f"><span>Descripción</span><input type="text" id="a-desc" required maxlength="${MAX_DESC_ARCHIVO}" placeholder="Ej. Brief de la campaña aprobado por el cliente"></label>
-      <div class="counter" id="a-count">0 / ${MAX_DESC_ARCHIVO}</div>
-      <progress id="a-prog" max="100" value="0" hidden></progress>
-      <p class="err" id="frm-err" hidden></p>
-      <div class="foot"><span></span><button class="btn primary" type="submit">Agregar archivo</button></div>
-    </form>` : '<p class="muted" style="margin:0">Solo el personal registrado puede agregar archivos.</p>'}
-    <div id="archivos-lista" class="muted">Cargando archivos…</div></div>`);
-  cargarArchivos(id);
-}
-async function cargarArchivos(id) {
-  const seq = ++archivosSeq, box = $('#archivos-lista');
-  if (!box) return;
+const nombreDe = (email) => (email ? (st.personal.find((p) => p.email && p.email.toLowerCase() === String(email).toLowerCase()) || {}).nombre || email : '');
+const esMio = (email) => !!email && String(email).toLowerCase() === String(st.yo?.email || '').toLowerCase();
+const empOptions = (sel, todas) => (todas ? `<option value="">${todas}</option>` : '<option value="">Elige una empresa</option>') + st.empresas.map((e) => `<option value="${e.id}" ${sel === e.id ? 'selected' : ''}>${esc(e.nombre)}</option>`).join('');
+const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+// Listas que se cargan aparte de /api/estado (pueden crecer mucho).
+const cache = { archivos: null, minutas: null, error: '' };
+let listasSeq = 0;
+async function cargarListas() {
+  const seq = ++listasSeq;
   try {
-    const lista = await api('GET', `/api/empresas/${id}/archivos`);
-    if (seq !== archivosSeq || !$('#archivos-lista')) return;
-    const e = empById[id]; if (e) e.archivos = lista.length;
-    box.className = '';
-    box.innerHTML = lista.length ? `<ul class="files">${lista.map((a) => {
-      const borra = esLider() || a.subidoPor === st.yo?.email;
-      return `<li><div><a class="fn" href="/api/archivos/${a.id}" download>${esc(a.nombre)}</a><div class="fd">${esc(a.descripcion)}</div><div class="fm">${fmtTam(a.tamano)} · ${esc(fmtCuando(a.creado))} · ${esc(a.subidoPor)}</div></div>
-        <div class="t-act">${borra ? `<button class="btn small danger" type="button" data-act="del-archivo" data-id="${a.id}">Eliminar</button>` : ''}</div></li>`;
-    }).join('')}</ul>` : '<div class="empty"><b>Sin archivos</b>Agrega el primero con su descripción.</div>';
-  } catch (err) { if (seq === archivosSeq && $('#archivos-lista')) { box.className = 'err'; box.textContent = err.message; } }
+    const [archivos, minutas] = await Promise.all([api('GET', '/api/archivos'), api('GET', '/api/minutas')]);
+    if (seq !== listasSeq) return;
+    Object.assign(cache, { archivos, minutas, error: '' });
+  } catch (e) { if (seq === listasSeq) cache.error = e.message; }
+  pintarLista();
 }
+function pintarLista() {
+  const box = $('#lista'); if (!box) return;
+  box.innerHTML = ui.tab === 'archivos' ? listaArchivos() : ui.tab === 'minutas' ? listaMinutas() : '';
+}
+
 // XMLHttpRequest en lugar de fetch para mostrar el avance de la carga.
-function subirArchivo(empresaId, file, descripcion, onProg) {
+function subirArchivo(empresaId, file, descripcion, onProg, minutaId) {
   return new Promise((resolve, reject) => {
     const x = new XMLHttpRequest();
-    x.open('POST', `/api/empresas/${empresaId}/archivos?nombre=${encodeURIComponent(file.name)}&descripcion=${encodeURIComponent(descripcion)}`);
+    x.open('POST', `/api/empresas/${empresaId}/archivos?nombre=${encodeURIComponent(file.name)}&descripcion=${encodeURIComponent(descripcion || '')}${minutaId ? `&minuta=${encodeURIComponent(minutaId)}` : ''}`);
     x.withCredentials = true;
     x.setRequestHeader('content-type', file.type || 'application/octet-stream');
     x.upload.onprogress = (ev) => { if (ev.lengthComputable) onProg(Math.round((ev.loaded / ev.total) * 100)); };
@@ -609,20 +628,201 @@ function subirArchivo(empresaId, file, descripcion, onProg) {
     x.send(file);
   });
 }
-async function enviarArchivo(f) {
-  const id = f.dataset.id, file = $('#a-file').files[0], desc = $('#a-desc').value.trim(), btn = f.querySelector('button[type=submit]'), prog = $('#a-prog');
-  if (!file) return showErr('Elige un archivo.');
-  if (!file.size) return showErr('El archivo está vacío.');
-  if (file.size > MAX_ARCHIVO_MB * 1048576) return showErr(`El archivo pesa más de ${MAX_ARCHIVO_MB} MB.`);
-  if (!desc) return showErr('Escribe una descripción del archivo.');
-  if (desc.length > MAX_DESC_ARCHIVO) return showErr(`La descripción admite hasta ${MAX_DESC_ARCHIVO} caracteres.`);
-  $('#frm-err').hidden = true; btn.disabled = true; btn.textContent = 'Subiendo…'; prog.hidden = false; prog.value = 0;
+
+/* ---------- lote de archivos (carga en bloque) ---------- */
+// Cada elemento: { file, desc, estado: 'listo'|'subiendo'|'ok'|'error', prog, error }
+let lote = [];
+const errorArchivo = (f) => (!f.size ? 'Archivo vacío' : f.size > MAX_ARCHIVO_MB * 1048576 ? `Pesa más de ${MAX_ARCHIVO_MB} MB` : '');
+function agregarAlLote(files) {
+  for (const file of files) {
+    if (lote.some((x) => x.file.name === file.name && x.file.size === file.size && x.estado !== 'ok')) continue;
+    const err = errorArchivo(file);
+    lote.push({ file, desc: ($('#l-todos')?.value || '').trim().slice(0, MAX_DESC_ARCHIVO), estado: err ? 'error' : 'listo', prog: 0, error: err });
+  }
+  pintarLote();
+}
+function pintarLote() {
+  const box = $('#lote'); if (!box) return;
+  const conDesc = box.dataset.desc === '1';
+  const pend = lote.filter((x) => x.estado !== 'ok');
+  box.innerHTML = lote.length ? `<ul class="files lote">${lote.map((x, i) => `<li data-i="${i}" class="${x.estado}">
+    <div><div class="fn-plain">${esc(x.file.name)} <span class="muted">· ${fmtTam(x.file.size)}</span></div>
+    ${conDesc && x.estado !== 'ok' ? `<input type="text" class="l-desc" data-i="${i}" maxlength="${MAX_DESC_ARCHIVO}" value="${esc(x.desc)}" placeholder="Descripción (obligatoria, hasta ${MAX_DESC_ARCHIVO} caracteres)" ${x.estado === 'subiendo' ? 'disabled' : ''}>` : ''}
+    ${x.estado === 'subiendo' ? `<progress max="100" value="${x.prog}"></progress>` : ''}
+    ${x.estado === 'ok' ? '<div class="ok-txt">Subido</div>' : ''}${x.error ? `<div class="err">${esc(x.error)}</div>` : ''}</div>
+    <div class="t-act">${x.estado === 'subiendo' || x.estado === 'ok' ? '' : `<button class="btn small" type="button" data-act="lote-quitar" data-i="${i}" aria-label="Quitar ${esc(x.file.name)}">Quitar</button>`}</div></li>`).join('')}</ul>` : '';
+  const btn = $('#l-subir'); if (btn && !btn.dataset.ocupado) { btn.disabled = !pend.length; btn.textContent = pend.length > 1 ? `Subir ${pend.length} archivos` : 'Subir archivo'; }
+}
+/** Sube en orden los archivos pendientes del lote. Devuelve cuántos fallaron. */
+async function subirLote(empresaId, minutaId, conDesc) {
+  let fallidos = 0;
+  for (const x of lote) {
+    if (x.estado === 'ok') continue;
+    if (errorArchivo(x.file)) { x.estado = 'error'; x.error = errorArchivo(x.file); fallidos++; continue; }
+    if (conDesc && !x.desc.trim()) { x.estado = 'error'; x.error = 'Falta la descripción'; fallidos++; continue; }
+    x.estado = 'subiendo'; x.prog = 0; x.error = ''; pintarLote();
+    try {
+      await subirArchivo(empresaId, x.file, x.desc.trim(), (v) => { x.prog = v; const pr = document.querySelector(`#lote li[data-i="${lote.indexOf(x)}"] progress`); if (pr) pr.value = v; }, minutaId);
+      x.estado = 'ok';
+    } catch (e) { x.estado = 'error'; x.error = e.message; fallidos++; if (e.status === 401) break; }
+    pintarLote();
+  }
+  pintarLote();
+  return fallidos;
+}
+const zonaArchivos = (multiple = true) => `<div class="drop" id="drop"><input type="file" id="l-files" ${multiple ? 'multiple' : ''} class="sr-only">
+  <label for="l-files"><b>Elige archivos</b> o arrástralos aquí</label><span class="muted">Puedes seleccionar varios a la vez · máximo ${MAX_ARCHIVO_MB} MB cada uno</span></div>`;
+
+/* ---------- sección Archivos ---------- */
+function vArchivos() {
+  if (!cache.archivos) cargarListas(); else setTimeout(cargarListas, 0);
+  return `<div class="head"><div><h1>Archivos</h1><p class="sub">Documentos de cada empresa, con su descripción. También aparecen aquí los adjuntos de las minutas.</p></div>${puedeEditar() ? '<button class="btn primary" data-act="subir">Subir archivos</button>' : ''}</div>
+  <div class="filters"><label for="fEmpA">Empresa<select id="fEmpA" data-f="fEmp">${empOptions(ui.fEmp, 'Todas las empresas')}</select></label>
+  <label for="qArch">Buscar<input type="text" id="qArch" data-q="qArch" value="${esc(ui.qArch || '')}" placeholder="Nombre o descripción"></label></div>
+  <section class="panel" id="lista">${listaArchivos()}</section>`;
+}
+function listaArchivos() {
+  if (cache.error && !cache.archivos) return `<div class="empty err">${esc(cache.error)}</div>`;
+  if (!cache.archivos) return '<div class="empty">Cargando archivos…</div>';
+  const q = norm(ui.qArch);
+  const ls = cache.archivos.filter((a) => (!ui.fEmp || a.empresaId === ui.fEmp) && (!q || norm(a.nombre + ' ' + a.descripcion + ' ' + (a.minutaTitulo || '')).includes(q)));
+  if (!ls.length) return `<div class="empty"><b>${cache.archivos.length ? 'Ningún archivo coincide' : 'Todavía no hay archivos'}</b>${cache.archivos.length ? 'Cambia la empresa o la búsqueda.' : 'Usa Subir archivos para agregar el primero.'}</div>`;
+  return `<div class="tbl-wrap"><table class="tbl-arch"><thead><tr><th>Archivo</th><th>Empresa</th><th>Tamaño</th><th>Subido</th><th></th></tr></thead><tbody>${ls.map((a) => {
+    const e = empById[a.empresaId], borra = esLider() || esMio(a.subidoPor);
+    return `<tr><td><a class="fn" href="/api/archivos/${a.id}" download>${esc(a.nombre)}</a>${a.minutaId && a.descripcion === `Minuta: ${a.minutaTitulo || ''}`.slice(0, MAX_DESC_ARCHIVO) ? '' : `<div class="fd">${esc(a.descripcion)}</div>`}${a.minutaId ? `<button class="chip chip-btn" data-act="ver-minuta" data-id="${a.minutaId}">Minuta: ${esc(a.minutaTitulo || '')}</button>` : ''}</td>
+      <td>${e ? `<span class="chip emp">${esc(e.nombre)}</span>` : '—'}</td><td class="num">${fmtTam(a.tamano)}</td>
+      <td><span class="fm">${esc(nombreDe(a.subidoPor))}<br>${esc(fmtCuando(a.creado))}</span></td>
+      <td>${borra ? `<button class="btn small danger" data-act="del-archivo" data-id="${a.id}">Eliminar</button>` : ''}</td></tr>`;
+  }).join('')}</tbody></table></div><p class="muted foot-note">${ls.length} ${ls.length === 1 ? 'archivo' : 'archivos'} · ${fmtTam(ls.reduce((s, a) => s + a.tamano, 0))}</p>`;
+}
+function formSubir() {
+  if (!st.empresas.length) { toast('Primero registra una empresa'); return; }
+  lote = [];
+  openSheet(shHead('Subir archivos') + `<form id="frm-lote" class="sb">
+    <label class="f"><span>Empresa</span><select id="l-emp" required>${empOptions(ui.fEmp)}</select></label>
+    ${zonaArchivos()}
+    <div class="f"><span>Descripción para todos (opcional)</span><div class="inline"><input type="text" id="l-todos" maxlength="${MAX_DESC_ARCHIVO}" placeholder="Se copia a cada archivo; luego puedes ajustar cada una" style="flex:1"><button class="btn small" type="button" data-act="lote-todos">Aplicar a todos</button></div></div>
+    <div id="lote" data-desc="1"></div>
+    <p class="err" id="frm-err" hidden></p>
+    <div class="foot"><span class="muted" style="font-size:12.5px;align-self:center">Cada archivo lleva su propia descripción (hasta ${MAX_DESC_ARCHIVO} caracteres).</span><button class="btn primary" type="submit" id="l-subir" disabled>Subir archivo</button></div></form>`);
+}
+async function enviarLote(f) {
+  const emp = $('#l-emp').value, btn = $('#l-subir');
+  if (!emp) return showErr('Elige la empresa.');
+  if (!lote.some((x) => x.estado !== 'ok')) return showErr('Agrega al menos un archivo.');
+  const sinDesc = lote.filter((x) => x.estado !== 'ok' && !x.desc.trim()).length;
+  if (sinDesc) return showErr(sinDesc === 1 ? 'A un archivo le falta la descripción.' : `A ${sinDesc} archivos les falta la descripción.`);
+  $('#frm-err').hidden = true; btn.disabled = true; btn.dataset.ocupado = '1'; btn.textContent = 'Subiendo…'; $('#l-emp').disabled = true;
+  const fallidos = await subirLote(emp, null, true);
+  delete btn.dataset.ocupado; $('#l-emp').disabled = false;
+  const ok = lote.filter((x) => x.estado === 'ok').length;
+  cargarListas(); cargar();
+  if (!fallidos) { toast(ok === 1 ? 'Archivo subido' : `${ok} archivos subidos`); closeSheet(); return; }
+  pintarLote(); showErr(`${fallidos} ${fallidos === 1 ? 'archivo no se subió' : 'archivos no se subieron'}. Revisa el detalle y vuelve a intentar.`);
+}
+
+/* ---------- notas de empresa (bitácora) ---------- */
+let notasSeq = 0, notasActuales = [];
+function formNotas(id) {
+  const e = empById[id]; if (!e) return;
+  openSheet(shHead('Notas · ' + esc(e.nombre)) + `<div class="sb" id="notas" data-id="${id}">
+    ${puedeEditar() ? `<form id="frm-nota" data-id="${id}" class="f">
+      <span>Nueva nota · se guarda a nombre de <b>${esc(st.yo.nombre || st.yo.email)}</b> con fecha y hora</span>
+      <textarea id="n-texto" maxlength="${MAX_NOTA}" required placeholder="Escribe la nota…"></textarea>
+      <div class="inline" style="justify-content:space-between"><span class="counter" id="n-count">0 / ${MAX_NOTA}</span><button class="btn primary" type="submit">Agregar nota</button></div>
+      <p class="err" id="frm-err" hidden></p></form>` : ''}
+    <div class="inline"><label class="f" style="flex:1"><span>Ver notas de</span><select id="n-autor"><option value="">Todas las personas</option></select></label></div>
+    <div id="notas-lista" class="muted">Cargando notas…</div></div>`);
+  cargarNotas(id);
+}
+async function cargarNotas(id) {
+  const seq = ++notasSeq;
   try {
-    await subirArchivo(id, file, desc, (v) => (prog.value = v));
-    toast('Archivo agregado'); f.reset(); $('#a-count').textContent = `0 / ${MAX_DESC_ARCHIVO}`;
-    await cargarArchivos(id);
-  } catch (e) { showErr(e.message); }
-  btn.disabled = false; btn.textContent = 'Agregar archivo'; prog.hidden = true;
+    const ls = await api('GET', `/api/empresas/${id}/notas`);
+    if (seq !== notasSeq || !$('#notas-lista')) return;
+    notasActuales = ls;
+    const sel = $('#n-autor'), prev = sel.value;
+    const autores = [...new Map(ls.map((n) => [n.autorEmail || n.autorNombre, n.autorNombre || n.autorEmail])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+    sel.innerHTML = '<option value="">Todas las personas</option>' + autores.map(([k, v]) => `<option value="${esc(k)}" ${k === prev ? 'selected' : ''}>${esc(v)} (${ls.filter((n) => (n.autorEmail || n.autorNombre) === k).length})</option>`).join('');
+    pintarNotas();
+  } catch (err) { if (seq === notasSeq && $('#notas-lista')) { $('#notas-lista').className = 'err'; $('#notas-lista').textContent = err.message; } }
+}
+function pintarNotas() {
+  const box = $('#notas-lista'); if (!box) return;
+  const k = $('#n-autor').value;
+  const ls = notasActuales.filter((n) => !k || (n.autorEmail || n.autorNombre) === k);
+  box.className = '';
+  box.innerHTML = ls.length ? `<ol class="notes">${ls.map((n) => `<li><div class="nh"><span class="av">${esc(ini(n.autorNombre))}</span><b>${esc(n.autorNombre || n.autorEmail)}</b><span class="muted">${esc(fmtCuando(n.creada))}</span>
+      ${esLider() || esMio(n.autorEmail) ? `<button class="btn-link danger-link" data-act="del-nota" data-id="${n.id}">Eliminar</button>` : ''}</div><div class="nt">${esc(n.texto)}</div></li>`).join('')}</ol>`
+    : `<div class="empty"><b>${notasActuales.length ? 'Esta persona no tiene notas aquí' : 'Sin notas'}</b>${notasActuales.length ? '' : 'Agrega la primera nota de esta empresa.'}</div>`;
+}
+async function enviarNota(f) {
+  const t = $('#n-texto').value.trim(), btn = f.querySelector('button[type=submit]');
+  if (!t) return showErr('Escribe la nota.');
+  btn.disabled = true;
+  try { await api('POST', `/api/empresas/${f.dataset.id}/notas`, { texto: t }); $('#n-texto').value = ''; $('#n-count').textContent = `0 / ${MAX_NOTA}`; $('#frm-err').hidden = true; toast('Nota agregada'); await cargarNotas(f.dataset.id); }
+  catch (e) { showErr(e.message); }
+  btn.disabled = false;
+}
+
+/* ---------- sección Minutas ---------- */
+function vMinutas() {
+  if (!cache.minutas) cargarListas(); else setTimeout(cargarListas, 0);
+  return `<div class="head"><div><h1>Minutas</h1><p class="sub">Minutas de cada reunión: acuerdos, asistentes y documentos adjuntos, por empresa.</p></div>${puedeEditar() ? '<button class="btn primary" data-act="new-m">Nueva minuta</button>' : ''}</div>
+  <div class="filters"><label for="fEmpM">Empresa<select id="fEmpM" data-f="fEmp">${empOptions(ui.fEmp, 'Todas las empresas')}</select></label>
+  <label for="qMin">Buscar<input type="text" id="qMin" data-q="qMin" value="${esc(ui.qMin || '')}" placeholder="Título, asistentes o contenido"></label></div>
+  <div id="lista">${listaMinutas()}</div>`;
+}
+const adjuntosDe = (id) => (cache.archivos || []).filter((a) => a.minutaId === id);
+function listaMinutas() {
+  if (cache.error && !cache.minutas) return `<div class="panel"><div class="empty err">${esc(cache.error)}</div></div>`;
+  if (!cache.minutas) return '<div class="panel"><div class="empty">Cargando minutas…</div></div>';
+  const q = norm(ui.qMin);
+  const ls = cache.minutas.filter((m) => (!ui.fEmp || m.empresaId === ui.fEmp) && (!q || norm([m.titulo, m.asistentes, m.contenido].join(' ')).includes(q)));
+  if (!ls.length) return `<div class="panel"><div class="empty"><b>${cache.minutas.length ? 'Ninguna minuta coincide' : 'Todavía no hay minutas'}</b>${cache.minutas.length ? 'Cambia la empresa o la búsqueda.' : 'Usa Nueva minuta después de cada reunión.'}</div></div>`;
+  return ls.map((m) => {
+    const e = empById[m.empresaId], adj = adjuntosDe(m.id), edita = esLider() || esMio(m.creadaPor);
+    return `<article class="panel minuta" id="minuta-${m.id}"><div class="ph"><div><h2>${esc(m.titulo)}</h2><div class="t-meta"><span class="chip">${fmtLargo(m.fecha)}</span>${e ? `<span class="chip emp">${esc(e.nombre)}</span>` : ''}</div></div>
+      ${edita ? `<div class="t-act"><button class="btn small" data-act="edit-m" data-id="${m.id}">Editar</button></div>` : ''}</div>
+      <div class="pb">${m.asistentes ? `<p class="m-asis"><b>Asistentes:</b> ${esc(m.asistentes)}</p>` : ''}
+      ${m.contenido ? `<details ${m.contenido.length < 400 ? 'open' : ''}><summary>${m.contenido.length < 400 ? 'Contenido' : 'Ver minuta completa'}</summary><div class="nt">${esc(m.contenido)}</div></details>` : ''}
+      ${adj.length ? `<div class="m-adj"><b>Adjuntos</b><ul>${adj.map((a) => `<li><a class="fn" href="/api/archivos/${a.id}" download>${esc(a.nombre)}</a> <span class="muted">· ${fmtTam(a.tamano)}</span></li>`).join('')}</ul></div>` : ''}
+      <p class="fm">Capturada por ${esc(nombreDe(m.creadaPor))} · ${esc(fmtCuando(m.creada))}${m.actualizadaPor && m.actualizada !== m.creada ? ` · editada por ${esc(nombreDe(m.actualizadaPor))} · ${esc(fmtCuando(m.actualizada))}` : ''}</p></div></article>`;
+  }).join('');
+}
+function formMinuta(id) {
+  if (!st.empresas.length) { toast('Primero registra una empresa'); return; }
+  const m = id ? (cache.minutas || []).find((x) => x.id === id) : { empresaId: ui.fEmp, fecha: st.hoy };
+  if (!m) return;
+  lote = [];
+  const adj = id ? adjuntosDe(id) : [];
+  openSheet(shHead(id ? 'Editar minuta' : 'Nueva minuta') + `<form id="frm-minuta" class="sb" data-id="${id || ''}">
+    <div class="f2"><label class="f"><span>Empresa</span><select id="m-emp" required>${empOptions(m.empresaId)}</select></label>
+    <label class="f"><span>Fecha de la reunión</span><input type="date" id="m-fecha" required value="${esc(m.fecha || '')}"></label></div>
+    <label class="f"><span>Título</span><input type="text" id="m-titulo" required maxlength="200" value="${esc(m.titulo || '')}" placeholder="Ej. Revisión mensual de resultados"></label>
+    <label class="f"><span>Asistentes</span><input type="text" id="m-asis" maxlength="500" value="${esc(m.asistentes || '')}" placeholder="Ej. Laura Polanco (cliente), Jeanette, Beto"></label>
+    <label class="f"><span>Acuerdos, temas y pendientes</span><textarea id="m-cont" maxlength="20000" style="min-height:180px">${esc(m.contenido || '')}</textarea></label>
+    ${adj.length ? `<div class="f"><span>Adjuntos actuales</span><ul class="files">${adj.map((a) => `<li><div><a class="fn" href="/api/archivos/${a.id}" download>${esc(a.nombre)}</a> <span class="muted">· ${fmtTam(a.tamano)}</span></div><div class="t-act"><button class="btn small danger" type="button" data-act="del-archivo" data-id="${a.id}">Eliminar</button></div></li>`).join('')}</ul></div>` : ''}
+    <div class="f"><span>${adj.length ? 'Agregar adjuntos' : 'Adjuntos (opcional)'}: la minuta en Word o PDF, presentaciones, etc.</span>${zonaArchivos()}</div>
+    <div id="lote" data-desc="0"></div>
+    <p class="err" id="frm-err" hidden></p>
+    <div class="foot">${id ? `<button class="btn danger" type="button" data-act="del-minuta" data-id="${id}">Eliminar</button>` : '<span></span>'}<button class="btn primary" type="submit" id="m-guardar">${id ? 'Guardar cambios' : 'Guardar minuta'}</button></div></form>`);
+}
+async function enviarMinuta(f) {
+  let id = f.dataset.id || null;
+  const data = { empresaId: $('#m-emp').value, fecha: $('#m-fecha').value, titulo: $('#m-titulo').value.trim(), asistentes: $('#m-asis').value.trim(), contenido: $('#m-cont').value.trim() };
+  if (!data.empresaId || !data.fecha || !data.titulo) return showErr('Completa la empresa, la fecha y el título.');
+  const btn = $('#m-guardar'); btn.disabled = true; btn.textContent = 'Guardando…'; $('#frm-err').hidden = true;
+  try {
+    if (id) await api('PUT', `/api/minutas/${id}`, data);
+    else { id = (await api('POST', '/api/minutas', data)).id; f.dataset.id = id; }
+  } catch (e) { btn.disabled = false; btn.textContent = f.dataset.id ? 'Guardar cambios' : 'Guardar minuta'; return showErr(e.message); }
+  let fallidos = 0;
+  if (lote.some((x) => x.estado !== 'ok')) { btn.textContent = 'Subiendo adjuntos…'; btn.dataset.ocupado = '1'; fallidos = await subirLote(data.empresaId, id, false); delete btn.dataset.ocupado; }
+  cargarListas(); cargar();
+  if (!fallidos) { toast('Minuta guardada'); closeSheet(); return; }
+  btn.disabled = false; btn.textContent = 'Reintentar adjuntos';
+  showErr(`La minuta se guardó, pero ${fallidos === 1 ? 'un adjunto no se subió' : `${fallidos} adjuntos no se subieron`}. Revisa el detalle y vuelve a intentar.`);
 }
 
 function formPerfil(id) {
@@ -674,14 +874,36 @@ document.addEventListener('click', async (ev) => {
     else if (a === 'new-e') formEmpresa();
     else if (a === 'edit-e') formEmpresa(id);
     else if (a === 'plan') formPlan(id);
-    else if (a === 'archivos') formArchivos(id);
+    else if (a === 'notas') formNotas(id);
+    else if (a === 'ir-archivos' || a === 'ir-minutas') { ui.fEmp = id; saveUi(); ui.tab = a === 'ir-archivos' ? 'archivos' : 'minutas'; history.replaceState(null, '', '#' + ui.tab); render(); window.scrollTo(0, 0); }
+    else if (a === 'subir') formSubir();
+    else if (a === 'new-m') formMinuta();
+    else if (a === 'edit-m') formMinuta(id);
+    else if (a === 'ver-minuta') {
+      const mi = (cache.minutas || []).find((x) => x.id === id);
+      ui.tab = 'minutas'; ui.qMin = ''; if (mi && ui.fEmp && ui.fEmp !== mi.empresaId) ui.fEmp = mi.empresaId;
+      history.replaceState(null, '', '#minutas'); render();
+      const el = document.getElementById('minuta-' + id); if (el) { el.scrollIntoView({ block: 'start' }); const d = el.querySelector('details'); if (d) d.open = true; }
+    }
+    else if (a === 'lote-quitar') { lote.splice(Number(b.dataset.i), 1); pintarLote(); }
+    else if (a === 'lote-todos') { const v = $('#l-todos').value.trim(); lote.forEach((x) => { if (x.estado !== 'ok' && x.estado !== 'subiendo') x.desc = v; }); pintarLote(); }
+    else if (a === 'del-nota') {
+      if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'Confirmar'; return; }
+      await api('DELETE', `/api/notas/${id}`); toast('Nota eliminada'); await cargarNotas($('#notas').dataset.id);
+    }
+    else if (a === 'del-minuta') {
+      if (b.dataset.armed !== '1') { const n = adjuntosDe(id).length; b.dataset.armed = '1'; b.textContent = n ? `Confirmar: eliminar con ${n === 1 ? 'su adjunto' : `sus ${n} adjuntos`}` : 'Confirmar eliminación'; return; }
+      b.disabled = true;
+      await api('DELETE', `/api/minutas/${id}`); toast('Minuta eliminada'); closeSheet(); cargarListas(); cargar();
+    }
     else if (a === 'new-pf') formPerfil();
     else if (a === 'edit-pf') formPerfil(id);
     else if (a === 'del-archivo') {
       if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'Confirmar'; return; }
       b.disabled = true;
       await api('DELETE', `/api/archivos/${id}`); toast('Archivo eliminado');
-      await cargarArchivos($('#archivos').dataset.id);
+      const li = b.closest('#sheet li'); if (li) li.remove();
+      cargarListas(); cargar();
     }
     else if (a === 'plan-go') {
       b.disabled = true; b.textContent = 'Creando actividades…';
@@ -704,6 +926,8 @@ document.addEventListener('click', async (ev) => {
 });
 document.addEventListener('change', async (ev) => {
   if (ev.target.id === 'c-proveedor') { aplicarProveedor(ev.target.value); return; }
+  if (ev.target.id === 'l-files') { agregarAlLote([...ev.target.files]); ev.target.value = ''; return; }
+  if (ev.target.id === 'n-autor') { pintarNotas(); return; }
   const f = ev.target.dataset.f;
   if (f) { ui[f] = ev.target.value; if (f === 'fEmp' || f === 'fPer') saveUi(); render(); return; }
   const tid = ev.target.dataset.estado;
@@ -714,7 +938,9 @@ document.addEventListener('change', async (ev) => {
   }
 });
 document.addEventListener('submit', async (ev) => {
-  if (ev.target.id === 'frm-archivo') { ev.preventDefault(); enviarArchivo(ev.target); return; }
+  if (ev.target.id === 'frm-lote') { ev.preventDefault(); enviarLote(ev.target); return; }
+  if (ev.target.id === 'frm-nota') { ev.preventDefault(); enviarNota(ev.target); return; }
+  if (ev.target.id === 'frm-minuta') { ev.preventDefault(); enviarMinuta(ev.target); return; }
   if (ev.target.id === 'frm-correo') { ev.preventDefault(); guardarCorreo(ev.submitter && ev.submitter.value === 'probar'); return; }
   if (ev.target.id !== 'frm') return;
   ev.preventDefault();
@@ -737,7 +963,7 @@ document.addEventListener('submit', async (ev) => {
     if (!data.nombre) return showErr('Escribe el nombre.');
     path = '/api/personal';
   } else {
-    data = { nombre: $('#e-nombre').value.trim(), contacto: $('#e-contacto').value.trim(), inicio: $('#e-inicio').value, notas: $('#e-notas').value.trim() };
+    data = { nombre: $('#e-nombre').value.trim(), contacto: $('#e-contacto').value.trim(), inicio: $('#e-inicio').value };
     if (!data.nombre) return showErr('Escribe el nombre de la empresa.');
     path = '/api/empresas';
   }
@@ -745,12 +971,21 @@ document.addEventListener('submit', async (ev) => {
   try { await escribir(id ? 'PUT' : 'POST', id ? `${path}/${id}` : path, data, id ? 'Cambios guardados' : 'Registro creado'); closeSheet(); }
   catch (e) { btn.disabled = false; showErr(e.message); }
 });
-document.addEventListener('input', (ev) => { if (ev.target.id === 'a-desc') $('#a-count').textContent = `${ev.target.value.length} / ${MAX_DESC_ARCHIVO}`; });
+document.addEventListener('input', (ev) => {
+  const t = ev.target;
+  if (t.classList.contains('l-desc')) { const x = lote[Number(t.dataset.i)]; if (x) { x.desc = t.value; if (x.error === 'Falta la descripción') { x.error = ''; x.estado = 'listo'; } } return; }
+  if (t.id === 'n-texto') { $('#n-count').textContent = `${t.value.length} / ${MAX_NOTA}`; return; }
+  if (t.dataset.q) { ui[t.dataset.q] = t.value; pintarLista(); }
+});
+document.addEventListener('dragover', (ev) => { const d = ev.target.closest && ev.target.closest('#drop'); if (d) { ev.preventDefault(); d.classList.add('over'); } });
+document.addEventListener('dragleave', (ev) => { const d = ev.target.closest && ev.target.closest('#drop'); if (d) d.classList.remove('over'); });
+document.addEventListener('drop', (ev) => { const d = ev.target.closest && ev.target.closest('#drop'); if (d) { ev.preventDefault(); d.classList.remove('over'); agregarAlLote([...ev.dataTransfer.files]); } });
 document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !$('#overlay').hidden) closeSheet(); });
 window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (TABS.includes(h) && h !== ui.tab) { ui.tab = h; render(); } });
 
 // Actualiza cada 30 s mientras la pestaña está visible y no hay un formulario abierto.
-setInterval(() => { if (document.visibilityState === 'visible' && $('#overlay').hidden && st.status === 'ready' && ui.tab !== 'correo') { st.hoy = hoyCDMX(); cargar(); } }, 30000);
+const escribiendo = () => !!(document.activeElement && document.activeElement.closest('#main') && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
+setInterval(() => { if (document.visibilityState === 'visible' && $('#overlay').hidden && st.status === 'ready' && ui.tab !== 'correo' && !escribiendo()) { st.hoy = hoyCDMX(); cargar(); } }, 30000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && $('#overlay').hidden && st.status === 'ready' && ui.tab !== 'correo') cargar(); });
 cargar();
 </script>

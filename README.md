@@ -7,7 +7,9 @@ App de TiTi-Apps para el servicio de generación y calificación de contactos en
 - **Personal:** cada persona con su perfil, líderes globales y empresas asignadas.
 - **Perfiles** (solo líderes globales): crear, renombrar y eliminar los perfiles del personal. Vienen Admin, Project manager, Community manager, Diseñador gráfico, Telemarketer y Analista de datos.
 - **Empresas:** fecha de arranque y botón para cargar el plan de trabajo de 6 meses (44 actividades asignadas por perfil).
-- **Archivos por empresa:** botón **Archivos** en cada empresa para subir cualquier cantidad de archivos (hasta 100 MB cada uno), cada uno con una descripción de hasta 150 caracteres.
+- **Archivos:** sección con todos los documentos, filtro por empresa y búsqueda; se suben varios a la vez (hasta 100 MB cada uno), cada uno con una descripción de hasta 150 caracteres.
+- **Notas por empresa:** bitácora en la que cada nota queda con su autor y fecha; se puede ver la serie de notas de cada persona.
+- **Minutas:** sección para las minutas de cada reunión (empresa, fecha, asistentes, acuerdos y adjuntos).
 - **Orden del día:** correo automático a las 8:00 (lunes a viernes, hora de Ciudad de México) a cada persona con sus actividades abiertas.
 - **Correo:** la cuenta que envía la orden del día se configura desde la app como en cualquier programa de correo (SMTP + IMAP). Por ahora: `tdsynnex@titi-apps.com`.
 
@@ -18,6 +20,13 @@ App de TiTi-Apps para el servicio de generación y calificación de contactos en
 - La contraseña se guarda cifrada (AES-GCM) con el secreto `CLAVE_CORREO` y nunca se devuelve al navegador.
 - Ya no hace falta verificar `titi-apps.com` en Email Service ni agregar sus registros DNS.
 - Si ya publicaste la versión 1: haz push de esta versión (la migración `0003_cuenta_correo.sql` se aplica sola), crea el secreto `CLAVE_CORREO` (paso 3) y configura la cuenta en **Correo**.
+
+## Archivos, notas y minutas (versión 2.3)
+
+- **Archivos** (nueva pestaña): lista todos los archivos con filtro por empresa y búsqueda por nombre o descripción. **Subir archivos** permite elegir o arrastrar varios a la vez; cada uno lleva su descripción (hasta 150 caracteres) y hay un campo para copiar la misma descripción a todos. Se suben uno tras otro con su avance; si alguno falla, los demás se guardan y se puede reintentar solo el que falló. El botón **Archivos (n)** de cada empresa abre esta sección ya filtrada.
+- **Notas** (botón en cada empresa): bitácora. Cada nota guarda automáticamente quién la escribió (según su sesión de Cloudflare Access) y la fecha y hora; no se pueden editar, solo eliminar por su autor o un líder global. El filtro **Ver notas de** muestra la serie de notas de cada persona. La tarjeta de la empresa muestra la última nota. Las notas que ya existían pasaron a la bitácora como «Notas anteriores».
+- **Minutas** (nueva pestaña): empresa, fecha de la reunión, título, asistentes, acuerdos/temas/pendientes y adjuntos (la minuta en Word o PDF, presentaciones, etc.). Filtro por empresa y búsqueda. La crea cualquier persona registrada; la editan o eliminan quien la creó o un líder global. Sus adjuntos también aparecen en **Archivos**, con una etiqueta que lleva a la minuta; al eliminar la minuta se eliminan sus adjuntos.
+- La migración `0006_notas_minutas.sql` crea las tablas `empresa_notas` y `minutas` y agrega `minuta_id` a `empresa_archivos`. No requiere configuración adicional en Cloudflare: usa el mismo bucket R2.
 
 ## Perfiles (versión 2.2)
 

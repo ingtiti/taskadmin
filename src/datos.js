@@ -15,14 +15,25 @@ export async function cargarEstado(env) {
     env.DB.prepare('SELECT fecha, hora, origen, enviados, fallidos, nota FROM envios ORDER BY id DESC LIMIT 1'),
     env.DB.prepare('SELECT empresa_id, COUNT(*) AS n FROM empresa_archivos GROUP BY empresa_id'),
     env.DB.prepare('SELECT id, nombre, clave FROM perfiles ORDER BY nombre COLLATE NOCASE'),
+    env.DB.prepare(`SELECT n.empresa_id, COUNT(*) AS n, MAX(n.creada) AS ultima,
+      (SELECT texto FROM empresa_notas x WHERE x.empresa_id = n.empresa_id ORDER BY x.creada DESC LIMIT 1) AS texto,
+      (SELECT autor_nombre FROM empresa_notas x WHERE x.empresa_id = n.empresa_id ORDER BY x.creada DESC LIMIT 1) AS autor
+      FROM empresa_notas n GROUP BY n.empresa_id`),
+    env.DB.prepare('SELECT empresa_id, COUNT(*) AS n FROM minutas GROUP BY empresa_id'),
   ]);
-  const [E, P, PE, T, TR, EN, EA, PF] = r.map((x) => x.results);
+  const [E, P, PE, T, TR, EN, EA, PF, NO, MI] = r.map((x) => x.results);
   const archivosDe = Object.fromEntries(EA.map((x) => [x.empresa_id, x.n]));
+  const notasDe = Object.fromEntries(NO.map((x) => [x.empresa_id, x]));
+  const minutasDe = Object.fromEntries(MI.map((x) => [x.empresa_id, x.n]));
   const empsDe = {}, respDe = {};
   for (const x of PE) (empsDe[x.persona_id] ||= []).push(x.empresa_id);
   for (const x of TR) (respDe[x.tarea_id] ||= []).push(x.persona_id);
   return {
-    empresas: E.map((e) => ({ ...e, archivos: archivosDe[e.id] || 0 })),
+    empresas: E.map(({ notas, ...e }) => {
+      const n = notasDe[e.id];
+      return { ...e, archivos: archivosDe[e.id] || 0, minutas: minutasDe[e.id] || 0, notas: n ? n.n : 0,
+        ultimaNota: n ? { texto: String(n.texto || '').slice(0, 280), autor: n.autor, creada: n.ultima } : null };
+    }),
     personal: P.map((p) => ({ ...p, lider: !!p.lider, activo: !!p.activo, empresas: empsDe[p.id] || [] })),
     tareas: T.map((t) => ({
       id: t.id, titulo: t.titulo, empresaId: t.empresa_id, inicio: t.inicio, fecha: t.fecha, prioridad: t.prioridad,
@@ -57,8 +68,8 @@ async function correr(env, stmts) {
 /* ---------- empresas ---------- */
 export async function guardarEmpresa(env, id, d, quien, nueva) {
   const s = nueva
-    ? env.DB.prepare('INSERT INTO empresas (id, nombre, contacto, inicio, notas) VALUES (?,?,?,?,?)').bind(id, d.nombre, d.contacto, d.inicio, d.notas)
-    : env.DB.prepare("UPDATE empresas SET nombre=?, contacto=?, inicio=?, notas=?, actualizada=datetime('now') WHERE id=?").bind(d.nombre, d.contacto, d.inicio, d.notas, id);
+    ? env.DB.prepare('INSERT INTO empresas (id, nombre, contacto, inicio) VALUES (?,?,?,?)').bind(id, d.nombre, d.contacto, d.inicio)
+    : env.DB.prepare("UPDATE empresas SET nombre=?, contacto=?, inicio=?, actualizada=datetime('now') WHERE id=?").bind(d.nombre, d.contacto, d.inicio, id);
   const [r] = await correr(env, [s, hist(env, quien, nueva ? 'crear' : 'editar', 'empresa', id, d)]);
   if (!r.meta.changes) throw new HttpError(404, 'La empresa ya no existe.');
 }
@@ -69,18 +80,24 @@ export async function borrarEmpresa(env, id, quien) {
     env.DB.prepare('DELETE FROM tareas WHERE empresa_id = ?').bind(id),
     env.DB.prepare('DELETE FROM personal_empresas WHERE empresa_id = ?').bind(id),
     env.DB.prepare('DELETE FROM empresa_archivos WHERE empresa_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM empresa_notas WHERE empresa_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM minutas WHERE empresa_id = ?').bind(id),
     env.DB.prepare('DELETE FROM empresas WHERE id = ?').bind(id),
     hist(env, quien, 'eliminar', 'empresa', id),
   ]);
-  if (!r[4].meta.changes) throw new HttpError(404, 'La empresa ya no existe.');
+  if (!r[6].meta.changes) throw new HttpError(404, 'La empresa ya no existe.');
 }
 
 /* ---------- archivos de empresa (metadatos; el contenido está en R2) ---------- */
-const colsArchivo = 'id, empresa_id, nombre, tipo, tamano, descripcion, subido_por, creado';
-const mapArchivo = (a) => ({ id: a.id, empresaId: a.empresa_id, nombre: a.nombre, tipo: a.tipo, tamano: a.tamano, descripcion: a.descripcion, subidoPor: a.subido_por, creado: a.creado });
+const colsArchivo = 'a.id, a.empresa_id, a.nombre, a.tipo, a.tamano, a.descripcion, a.subido_por, a.creado, a.minuta_id';
+const mapArchivo = (a) => ({ id: a.id, empresaId: a.empresa_id, nombre: a.nombre, tipo: a.tipo, tamano: a.tamano, descripcion: a.descripcion, subidoPor: a.subido_por, creado: a.creado, minutaId: a.minuta_id || null, minutaTitulo: a.minuta_titulo || null });
 
-export async function listarArchivos(env, empresaId) {
-  const r = await env.DB.prepare(`SELECT ${colsArchivo} FROM empresa_archivos WHERE empresa_id = ? ORDER BY creado DESC, nombre COLLATE NOCASE`).bind(empresaId).all();
+/** Todos los archivos, o solo los de una empresa. Incluye los adjuntos de minutas con el título de su minuta. */
+export async function listarArchivos(env, empresaId = null) {
+  const sql = `SELECT ${colsArchivo}, m.titulo AS minuta_titulo FROM empresa_archivos a LEFT JOIN minutas m ON m.id = a.minuta_id
+    ${empresaId ? 'WHERE a.empresa_id = ?' : ''} ORDER BY a.creado DESC, a.nombre COLLATE NOCASE`;
+  const st = env.DB.prepare(sql);
+  const r = await (empresaId ? st.bind(empresaId) : st).all();
   return r.results.map(mapArchivo);
 }
 
@@ -90,15 +107,15 @@ export async function clavesArchivosEmpresa(env, empresaId) {
 }
 
 export async function leerArchivo(env, id) {
-  const a = await env.DB.prepare(`SELECT ${colsArchivo}, clave FROM empresa_archivos WHERE id = ?`).bind(id).first();
+  const a = await env.DB.prepare(`SELECT ${colsArchivo}, a.clave FROM empresa_archivos a WHERE a.id = ?`).bind(id).first();
   return a ? { ...mapArchivo(a), clave: a.clave } : null;
 }
 
 export async function crearArchivo(env, a, quien) {
   await env.DB.batch([
-    env.DB.prepare('INSERT INTO empresa_archivos (id, empresa_id, clave, nombre, tipo, tamano, descripcion, subido_por) VALUES (?,?,?,?,?,?,?,?)')
-      .bind(a.id, a.empresaId, a.clave, a.nombre, a.tipo, a.tamano, a.descripcion, quien),
-    hist(env, quien, 'subir archivo', 'empresa', a.empresaId, { archivo: a.id, nombre: a.nombre, tamano: a.tamano, descripcion: a.descripcion }),
+    env.DB.prepare('INSERT INTO empresa_archivos (id, empresa_id, clave, nombre, tipo, tamano, descripcion, subido_por, minuta_id) VALUES (?,?,?,?,?,?,?,?,?)')
+      .bind(a.id, a.empresaId, a.clave, a.nombre, a.tipo, a.tamano, a.descripcion, quien, a.minutaId || null),
+    hist(env, quien, 'subir archivo', 'empresa', a.empresaId, { archivo: a.id, nombre: a.nombre, tamano: a.tamano, descripcion: a.descripcion, minuta: a.minutaId || undefined }),
   ]);
 }
 
@@ -108,6 +125,76 @@ export async function borrarArchivo(env, a, quien) {
     hist(env, quien, 'eliminar archivo', 'empresa', a.empresaId, { archivo: a.id, nombre: a.nombre }),
   ]);
   if (!r.meta.changes) throw new HttpError(404, 'El archivo ya no existe.');
+}
+
+/* ---------- notas de empresa (bitácora) ---------- */
+const mapNota = (n) => ({ id: n.id, empresaId: n.empresa_id, texto: n.texto, autorEmail: n.autor_email, autorNombre: n.autor_nombre, creada: n.creada });
+
+export async function listarNotas(env, empresaId) {
+  const r = await env.DB.prepare('SELECT * FROM empresa_notas WHERE empresa_id = ? ORDER BY creada DESC, rowid DESC').bind(empresaId).all();
+  return r.results.map(mapNota);
+}
+
+export async function leerNota(env, id) {
+  const n = await env.DB.prepare('SELECT * FROM empresa_notas WHERE id = ?').bind(id).first();
+  return n ? mapNota(n) : null;
+}
+
+export async function crearNota(env, n, yo) {
+  await env.DB.batch([
+    env.DB.prepare('INSERT INTO empresa_notas (id, empresa_id, texto, autor_email, autor_nombre) VALUES (?,?,?,?,?)')
+      .bind(n.id, n.empresaId, n.texto, yo.email, yo.nombre || yo.email),
+    hist(env, yo.email, 'agregar nota', 'empresa', n.empresaId, { nota: n.id }),
+  ]);
+}
+
+export async function borrarNota(env, n, quien) {
+  const [r] = await env.DB.batch([
+    env.DB.prepare('DELETE FROM empresa_notas WHERE id = ?').bind(n.id),
+    hist(env, quien, 'eliminar nota', 'empresa', n.empresaId, { nota: n.id, texto: n.texto.slice(0, 200), autor: n.autorEmail }),
+  ]);
+  if (!r.meta.changes) throw new HttpError(404, 'La nota ya no existe.');
+}
+
+/* ---------- minutas de reunión ---------- */
+const mapMinuta = (m) => ({ id: m.id, empresaId: m.empresa_id, fecha: m.fecha, titulo: m.titulo, asistentes: m.asistentes, contenido: m.contenido,
+  creadaPor: m.creada_por, creada: m.creada, actualizada: m.actualizada, actualizadaPor: m.actualizada_por });
+
+export async function listarMinutas(env, empresaId = null) {
+  const st = env.DB.prepare(`SELECT * FROM minutas ${empresaId ? 'WHERE empresa_id = ?' : ''} ORDER BY fecha DESC, creada DESC`);
+  const r = await (empresaId ? st.bind(empresaId) : st).all();
+  return r.results.map(mapMinuta);
+}
+
+export async function leerMinuta(env, id) {
+  const m = await env.DB.prepare('SELECT * FROM minutas WHERE id = ?').bind(id).first();
+  return m ? mapMinuta(m) : null;
+}
+
+export async function guardarMinuta(env, id, d, quien, nueva) {
+  const s = nueva
+    ? env.DB.prepare('INSERT INTO minutas (id, empresa_id, fecha, titulo, asistentes, contenido, creada_por, actualizada_por) VALUES (?,?,?,?,?,?,?,?)')
+        .bind(id, d.empresaId, d.fecha, d.titulo, d.asistentes, d.contenido, quien, quien)
+    : env.DB.prepare("UPDATE minutas SET empresa_id=?, fecha=?, titulo=?, asistentes=?, contenido=?, actualizada=datetime('now'), actualizada_por=? WHERE id=?")
+        .bind(d.empresaId, d.fecha, d.titulo, d.asistentes, d.contenido, quien, id);
+  const stmts = [s];
+  // Los adjuntos siguen a su minuta si cambia de empresa.
+  if (!nueva) stmts.push(env.DB.prepare('UPDATE empresa_archivos SET empresa_id = ? WHERE minuta_id = ?').bind(d.empresaId, id));
+  stmts.push(hist(env, quien, nueva ? 'crear' : 'editar', 'minuta', id, { empresa: d.empresaId, fecha: d.fecha, titulo: d.titulo }));
+  const [r] = await env.DB.batch(stmts);
+  if (!r.meta.changes) throw new HttpError(404, 'La minuta ya no existe.');
+}
+
+/** Borra la minuta y los datos de sus adjuntos; devuelve las llaves de R2 para borrarlas después. */
+export async function borrarMinuta(env, m, quien) {
+  const claves = (await env.DB.prepare('SELECT clave FROM empresa_archivos WHERE minuta_id = ?').bind(m.id).all()).results.map((x) => x.clave);
+  const r = await env.DB.batch([
+    env.DB.prepare('DELETE FROM empresa_archivos WHERE minuta_id = ?').bind(m.id),
+    env.DB.prepare('DELETE FROM minutas WHERE id = ?').bind(m.id),
+    hist(env, quien, 'eliminar', 'minuta', m.id, { titulo: m.titulo, adjuntos: claves.length }),
+  ]);
+  if (!r[1].meta.changes) throw new HttpError(404, 'La minuta ya no existe.');
+  return claves;
 }
 
 /* ---------- perfiles ---------- */
